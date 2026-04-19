@@ -1,0 +1,45 @@
+{
+  "name": "eduzzintegradorpsp",
+  "version": "1.0.0",
+  "description": "Agregador de transações multi-PSP",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/app/server/index.ts",
+    "build": "tsc",
+    "start": "node dist/app/server/index.js",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "format": "prettier . --write"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miguelvasp/EduzzIntegradorPSP.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/miguelvasp/EduzzIntegradorPSP/issues"
+  },
+  "homepage": "https://github.com/miguelvasp/EduzzIntegradorPSP#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.6.0",
+    "@types/supertest": "^7.2.0",
+    "@vitest/coverage-v8": "^4.1.4",
+    "eslint": "^10.2.1",
+    "prettier": "^3.8.3",
+    "supertest": "^7.2.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.58.2",
+    "vitest": "^4.1.4"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.8.5",
+    "zod": "^4.3.6"
+  }
+}
