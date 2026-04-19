@@ -54,3 +54,15 @@ Backlog versionado:
 
 - `docs/backlog/US-001.md`
 - `docs/backlog/US-002.md`
+
+## Catálogos semânticos compartilhados
+
+A aplicação mantém catálogos centralizados para valores canônicos e operacionais em:
+
+```text
+src/modules/shared/domain/
+  enums/
+  constants/
+  event-types/
+  error-codes/
+```

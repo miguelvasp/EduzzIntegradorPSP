@@ -47,3 +47,17 @@ module/
   infrastructure/
   presentation/
 ```
+
+## Convenção de centralização semântica
+
+A aplicação deve centralizar conceitos semânticos relevantes em catálogos compartilhados, evitando hardcode de domínio em regras de negócio, integração, persistência, API, logs e testes.
+
+### Estrutura base
+
+```text
+src/modules/shared/domain/
+  enums/
+  constants/
+  event-types/
+  error-codes/
+```
