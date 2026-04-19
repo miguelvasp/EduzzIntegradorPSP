@@ -41,3 +41,16 @@ src/
 docs/
   backlog/
 ```
+
+## Documentação de arquitetura
+
+A documentação técnica de arquitetura está disponível em:
+
+- `docs/architecture/overview.md`
+- `docs/architecture/modules.md`
+- `docs/architecture/conventions.md`
+
+Backlog versionado:
+
+- `docs/backlog/US-001.md`
+- `docs/backlog/US-002.md`
