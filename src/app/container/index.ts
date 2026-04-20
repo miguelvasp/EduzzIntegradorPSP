@@ -1,7 +1,7 @@
-import { env } from '../config/env';
+import { config } from '../config/env';
 
 export function buildContainer() {
   return {
-    env,
+    config,
   };
 }
