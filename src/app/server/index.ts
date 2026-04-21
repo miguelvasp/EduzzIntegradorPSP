@@ -1,4 +1,5 @@
 import { createServer } from './createServer';
+import { appLogger } from './logging';
 
 async function bootstrap() {
   try {
@@ -6,6 +7,12 @@ async function bootstrap() {
       import('../container/index.js'),
       import('../config/env.js'),
     ]);
+
+    appLogger.info({
+      eventType: 'startup',
+      message: 'Starting application',
+      status: 'started',
+    });
 
     buildContainer();
 
@@ -16,9 +23,21 @@ async function bootstrap() {
       port: config.app.port,
     });
 
-    app.log.info(`Server running at http://${config.app.host}:${config.app.port}`);
+    appLogger.info({
+      eventType: 'startup',
+      message: `Server running at http://${config.app.host}:${config.app.port}`,
+      status: 'completed',
+    });
   } catch (error) {
-    console.error('Failed to start application', error);
+    appLogger.error({
+      eventType: 'startup',
+      message: 'Failed to start application',
+      status: 'failed',
+      context: {
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      },
+    });
+
     process.exit(1);
   }
 }

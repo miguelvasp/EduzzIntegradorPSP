@@ -13,7 +13,7 @@ export function createDocumentHashValueObject(value: string): DocumentHashValueO
     throw new Error('Document hash cannot be a plain numeric document');
   }
 
-  if (/[.\-\/\s]/.test(normalizedValue)) {
+  if (/[./\-\s]/.test(normalizedValue)) {
     throw new Error('Document hash cannot contain document formatting characters');
   }
 
