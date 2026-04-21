@@ -1,0 +1,60 @@
+[
+  {
+    "id": 1001,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 150.5,
+    "installments": 3,
+    "date_created": "2026-04-21T09:00:00.000Z",
+    "date_last_updated": "2026-04-21T10:00:00.000Z",
+    "date_approved": "2026-04-21T10:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_001",
+      "email": "ana@example.com",
+      "first_name": "Ana",
+      "last_name": "Lima",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    },
+    "card": {
+      "first_six_digits": "411111",
+      "last_four_digits": "1111",
+      "cardholder": {
+        "name": "Ana Lima"
+      }
+    }
+  },
+  {
+    "id": 1002,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 300,
+    "installments": 1,
+    "date_created": "2026-04-22T09:00:00.000Z",
+    "date_last_updated": "2026-04-22T10:00:00.000Z",
+    "date_approved": "2026-04-22T10:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_002",
+      "email": "carlos@example.com",
+      "first_name": "Carlos",
+      "last_name": "Pereira",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    },
+    "card": {
+      "first_six_digits": "555555",
+      "last_four_digits": "4444",
+      "cardholder": {
+        "name": "Carlos Pereira"
+      }
+    }
+  }
+]

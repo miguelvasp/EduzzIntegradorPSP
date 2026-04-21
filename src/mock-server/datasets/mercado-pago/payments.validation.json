@@ -1,0 +1,57 @@
+[
+  {
+    "id": 5001,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 120,
+    "installments": 2,
+    "date_created": "2026-04-21T09:00:00.000Z",
+    "date_last_updated": "2026-04-21T10:00:00.000Z",
+    "date_approved": "2026-04-21T10:00:00.000Z",
+    "payment_type_id": "credit_card"
+  },
+  {
+    "id": 5002,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 130,
+    "date_created": "2026-04-21T10:00:00.000Z",
+    "date_last_updated": "2026-04-21T11:00:00.000Z",
+    "date_approved": "2026-04-21T11:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_validation_002",
+      "email": "sem-parcelas-mp@example.com",
+      "first_name": "Sem",
+      "last_name": "Parcelas",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  },
+  {
+    "id": 5003,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 140,
+    "installments": 1,
+    "date_created": "2026-04-21T11:00:00.000Z",
+    "date_last_updated": "2026-04-21T12:00:00.000Z",
+    "date_approved": "2026-04-21T12:00:00.000Z",
+    "payment_type_id": "pix",
+    "payer": {
+      "id": "mp_payer_validation_003",
+      "email": "pix-mp@example.com",
+      "first_name": "Pix",
+      "last_name": "MP",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  }
+]

@@ -1,0 +1,116 @@
+[
+  {
+    "id": "or_pag_validation_missing_customer",
+    "code": "order-validation-001",
+    "closed": true,
+    "status": "paid",
+    "currency": "BRL",
+    "amount": 10000,
+    "closed_at": "2026-04-21T10:00:00.000Z",
+    "created_at": "2026-04-21T09:00:00.000Z",
+    "updated_at": "2026-04-21T10:00:00.000Z",
+    "charges": [
+      {
+        "id": "ch_pag_validation_001",
+        "code": "charge-validation-001",
+        "gateway_id": "gw_validation_001",
+        "status": "paid",
+        "amount": 10000,
+        "paid_amount": 10000,
+        "payment_method": "credit_card",
+        "paid_at": "2026-04-21T10:00:00.000Z",
+        "created_at": "2026-04-21T09:00:00.000Z",
+        "updated_at": "2026-04-21T10:00:00.000Z",
+        "last_transaction": {
+          "id": "tran_pag_validation_001",
+          "transaction_type": "credit_card",
+          "gateway_id": "gw_tran_validation_001",
+          "amount": 10000,
+          "success": true,
+          "status": "captured",
+          "installments": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": "or_pag_validation_missing_installments",
+    "code": "order-validation-002",
+    "closed": true,
+    "status": "paid",
+    "currency": "BRL",
+    "amount": 12000,
+    "closed_at": "2026-04-21T11:00:00.000Z",
+    "created_at": "2026-04-21T10:00:00.000Z",
+    "updated_at": "2026-04-21T11:00:00.000Z",
+    "customer": {
+      "id": "cus_pag_validation_002",
+      "name": "Cliente Sem Parcelas",
+      "email": "sem-parcelas@example.com",
+      "document_type": "CPF",
+      "type": "individual"
+    },
+    "charges": [
+      {
+        "id": "ch_pag_validation_002",
+        "code": "charge-validation-002",
+        "gateway_id": "gw_validation_002",
+        "status": "paid",
+        "amount": 12000,
+        "paid_amount": 12000,
+        "payment_method": "credit_card",
+        "paid_at": "2026-04-21T11:00:00.000Z",
+        "created_at": "2026-04-21T10:00:00.000Z",
+        "updated_at": "2026-04-21T11:00:00.000Z",
+        "last_transaction": {
+          "id": "tran_pag_validation_002",
+          "transaction_type": "credit_card",
+          "gateway_id": "gw_tran_validation_002",
+          "amount": 12000,
+          "success": true,
+          "status": "captured"
+        }
+      }
+    ]
+  },
+  {
+    "id": "or_pag_validation_non_credit_card",
+    "code": "order-validation-003",
+    "closed": true,
+    "status": "paid",
+    "currency": "BRL",
+    "amount": 9000,
+    "closed_at": "2026-04-21T12:00:00.000Z",
+    "created_at": "2026-04-21T11:00:00.000Z",
+    "updated_at": "2026-04-21T12:00:00.000Z",
+    "customer": {
+      "id": "cus_pag_validation_003",
+      "name": "Cliente PIX",
+      "email": "pix@example.com",
+      "document_type": "CPF",
+      "type": "individual"
+    },
+    "charges": [
+      {
+        "id": "ch_pag_validation_003",
+        "code": "charge-validation-003",
+        "gateway_id": "gw_validation_003",
+        "status": "paid",
+        "amount": 9000,
+        "paid_amount": 9000,
+        "payment_method": "pix",
+        "paid_at": "2026-04-21T12:00:00.000Z",
+        "created_at": "2026-04-21T11:00:00.000Z",
+        "updated_at": "2026-04-21T12:00:00.000Z",
+        "last_transaction": {
+          "id": "tran_pag_validation_003",
+          "transaction_type": "pix",
+          "gateway_id": "gw_tran_validation_003",
+          "amount": 9000,
+          "success": true,
+          "status": "paid"
+        }
+      }
+    ]
+  }
+]

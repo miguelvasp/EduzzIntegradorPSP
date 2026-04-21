@@ -1,0 +1,24 @@
+[
+  {
+    "id": 6001,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 150,
+    "installments": 2,
+    "date_created": "2026-04-21T09:00:00.000Z",
+    "date_last_updated": "2026-04-21T10:00:00.000Z",
+    "date_approved": "2026-04-21T10:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_failure_001",
+      "email": "falha-mp@example.com",
+      "first_name": "Falha",
+      "last_name": "MP",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  }
+]

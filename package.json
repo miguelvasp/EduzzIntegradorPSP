@@ -5,11 +5,15 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx src/app/server/index.ts",
+    "dev:mock-server": "tsx src/mock-server/index.ts",
     "build": "tsc",
     "start": "node dist/app/server/index.js",
+    "start:mock-server": "node dist/mock-server/index.js",
     "test": "vitest run",
     "lint": "eslint .",
-    "format": "prettier . --write"
+    "format": "prettier . --write",
+    "mock:up": "docker compose up -d db mock-server app",
+    "mock:down": "docker compose down"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,68 @@
+[
+  {
+    "id": 4001,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 150,
+    "installments": 2,
+    "date_created": "2026-04-21T09:00:00.000Z",
+    "date_last_updated": "2026-04-21T10:00:00.000Z",
+    "date_approved": "2026-04-21T10:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_reimport_001",
+      "email": "reimport@example.com",
+      "first_name": "Reimport",
+      "last_name": "MP",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  },
+  {
+    "id": 4001,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 150,
+    "installments": 2,
+    "date_created": "2026-04-21T09:00:00.000Z",
+    "date_last_updated": "2026-04-21T10:00:00.000Z",
+    "date_approved": "2026-04-21T10:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_reimport_001",
+      "email": "reimport@example.com",
+      "first_name": "Reimport",
+      "last_name": "MP",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  },
+  {
+    "id": 4002,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 220,
+    "installments": 3,
+    "date_created": "2026-04-22T09:00:00.000Z",
+    "date_last_updated": "2026-04-22T12:00:00.000Z",
+    "date_approved": "2026-04-22T12:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_reimport_002",
+      "email": "update-mp@example.com",
+      "first_name": "Updated",
+      "last_name": "MP",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  }
+]

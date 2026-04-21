@@ -1,0 +1,112 @@
+[
+  {
+    "id": 3001,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 101,
+    "installments": 2,
+    "date_created": "2026-04-20T09:00:00.000Z",
+    "date_last_updated": "2026-04-20T10:00:00.000Z",
+    "date_approved": "2026-04-20T10:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_page_001",
+      "email": "page1@example.com",
+      "first_name": "Page",
+      "last_name": "One",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  },
+  {
+    "id": 3002,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 102,
+    "installments": 2,
+    "date_created": "2026-04-20T10:00:00.000Z",
+    "date_last_updated": "2026-04-20T11:00:00.000Z",
+    "date_approved": "2026-04-20T11:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_page_002",
+      "email": "page2@example.com",
+      "first_name": "Page",
+      "last_name": "Two",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  },
+  {
+    "id": 3003,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 103,
+    "installments": 2,
+    "date_created": "2026-04-20T11:00:00.000Z",
+    "date_last_updated": "2026-04-20T12:00:00.000Z",
+    "date_approved": "2026-04-20T12:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_page_003",
+      "email": "page3@example.com",
+      "first_name": "Page",
+      "last_name": "Three",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  },
+  {
+    "id": 3004,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 104,
+    "installments": 2,
+    "date_created": "2026-04-20T12:00:00.000Z",
+    "date_last_updated": "2026-04-20T13:00:00.000Z",
+    "date_approved": "2026-04-20T13:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_page_004",
+      "email": "page4@example.com",
+      "first_name": "Page",
+      "last_name": "Four",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  },
+  {
+    "id": 3005,
+    "status": "approved",
+    "status_detail": "accredited",
+    "currency_id": "BRL",
+    "transaction_amount": 105,
+    "installments": 2,
+    "date_created": "2026-04-20T13:00:00.000Z",
+    "date_last_updated": "2026-04-20T14:00:00.000Z",
+    "date_approved": "2026-04-20T14:00:00.000Z",
+    "payment_type_id": "credit_card",
+    "payer": {
+      "id": "mp_payer_page_005",
+      "email": "page5@example.com",
+      "first_name": "Page",
+      "last_name": "Five",
+      "identification": {
+        "type": "CPF",
+        "number": "masked"
+      }
+    }
+  }
+]
