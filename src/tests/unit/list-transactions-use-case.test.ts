@@ -9,6 +9,8 @@ describe('ListTransactionsUseCase', () => {
         items: [],
         total: 0,
       }),
+      getById: vi.fn(),
+      getPayerByTransactionId: vi.fn(),
     };
 
     const useCase = new ListTransactionsUseCase(repository);
@@ -54,6 +56,8 @@ describe('ListTransactionsUseCase', () => {
         ],
         total: 45,
       }),
+      getById: vi.fn(),
+      getPayerByTransactionId: vi.fn(),
     };
 
     const useCase = new ListTransactionsUseCase(repository);
@@ -71,6 +75,8 @@ describe('ListTransactionsUseCase', () => {
   it('deve falhar para page inválida', async () => {
     const repository = {
       list: vi.fn(),
+      getById: vi.fn(),
+      getPayerByTransactionId: vi.fn(),
     };
 
     const useCase = new ListTransactionsUseCase(repository);
@@ -85,6 +91,8 @@ describe('ListTransactionsUseCase', () => {
   it('deve falhar para limit inválido', async () => {
     const repository = {
       list: vi.fn(),
+      getById: vi.fn(),
+      getPayerByTransactionId: vi.fn(),
     };
 
     const useCase = new ListTransactionsUseCase(repository);
@@ -99,6 +107,8 @@ describe('ListTransactionsUseCase', () => {
   it('deve falhar para intervalo de datas inválido', async () => {
     const repository = {
       list: vi.fn(),
+      getById: vi.fn(),
+      getPayerByTransactionId: vi.fn(),
     };
 
     const useCase = new ListTransactionsUseCase(repository);
@@ -117,6 +127,8 @@ describe('ListTransactionsUseCase', () => {
         items: [],
         total: 0,
       }),
+      getById: vi.fn(),
+      getPayerByTransactionId: vi.fn(),
     };
 
     const useCase = new ListTransactionsUseCase(repository);

@@ -13,6 +13,7 @@ export const ErrorCode = {
   INCOMPLETE_PAYER_DATA: 'incomplete_payer_data',
   INCOMPLETE_INSTALLMENTS: 'incomplete_installments',
   RECONCILIATION_CONFLICT: 'reconciliation_conflict',
+  RESOURCE_NOT_FOUND: 'resource_not_found',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
