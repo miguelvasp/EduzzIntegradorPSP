@@ -1,4 +1,9 @@
-import { appLogger } from '../../../../../app/server/logging';
+import {
+  logExternalDependencyFailure,
+  logExternalDependencyRateLimited,
+  logExternalDependencyRetry,
+  logExternalDependencySuccess,
+} from '../../../../../app/server/logging/externalDependencyLogger';
 import { IntegrationError, ValidationError } from '../../../../shared/application/errors';
 import { PspType } from '../../../../shared/domain/enums/pspType';
 import { ErrorCode } from '../../../../shared/domain/error-codes/errorCode';
@@ -80,6 +85,33 @@ export class MercadoPagoHttpClient {
           psp: PspType.MERCADO_PAGO,
           operation: 'search_payments',
           endpoint: '/v1/payments/search',
+          onRetry: async (retryParams) => {
+            logExternalDependencyRetry({
+              provider: PspType.MERCADO_PAGO,
+              operation: 'search_payments',
+              endpoint: '/v1/payments/search',
+              attempt: retryParams.attempt,
+              maxAttempts: retryParams.maxAttempts,
+              delayMs: retryParams.delayMs,
+              error: retryParams.error,
+              context: {
+                offset: params.offset,
+                limit: params.limit,
+              },
+            });
+          },
+          onRateLimited: async (rateLimitParams) => {
+            logExternalDependencyRateLimited({
+              provider: PspType.MERCADO_PAGO,
+              operation: 'search_payments',
+              endpoint: '/v1/payments/search',
+              retryAfterMs: rateLimitParams.retryAfterMs,
+              context: {
+                offset: params.offset,
+                limit: params.limit,
+              },
+            });
+          },
         },
       );
 
@@ -146,6 +178,31 @@ export class MercadoPagoHttpClient {
           psp: PspType.MERCADO_PAGO,
           operation: 'get_payment_by_id',
           endpoint: '/v1/payments/:id',
+          onRetry: async (retryParams) => {
+            logExternalDependencyRetry({
+              provider: PspType.MERCADO_PAGO,
+              operation: 'get_payment_by_id',
+              endpoint: '/v1/payments/:id',
+              attempt: retryParams.attempt,
+              maxAttempts: retryParams.maxAttempts,
+              delayMs: retryParams.delayMs,
+              error: retryParams.error,
+              context: {
+                paymentId: normalizedPaymentId,
+              },
+            });
+          },
+          onRateLimited: async (rateLimitParams) => {
+            logExternalDependencyRateLimited({
+              provider: PspType.MERCADO_PAGO,
+              operation: 'get_payment_by_id',
+              endpoint: '/v1/payments/:id',
+              retryAfterMs: rateLimitParams.retryAfterMs,
+              context: {
+                paymentId: normalizedPaymentId,
+              },
+            });
+          },
         },
       );
 
@@ -278,17 +335,12 @@ export class MercadoPagoHttpClient {
     startedAt: number;
     context?: Record<string, unknown>;
   }): void {
-    appLogger.info({
-      eventType: 'psp_http_client_success',
-      message: 'Mercado Pago request completed',
-      status: 'completed',
-      durationMs: Date.now() - params.startedAt,
-      context: {
-        provider: PspType.MERCADO_PAGO,
-        operation: params.operation,
-        endpoint: params.endpoint,
-        ...params.context,
-      },
+    logExternalDependencySuccess({
+      provider: PspType.MERCADO_PAGO,
+      operation: params.operation,
+      endpoint: params.endpoint,
+      startedAt: params.startedAt,
+      context: params.context,
     });
   }
 
@@ -299,26 +351,13 @@ export class MercadoPagoHttpClient {
     error: unknown;
     context?: Record<string, unknown>;
   }): void {
-    appLogger.error({
-      eventType: 'psp_http_client_failure',
-      message: 'Mercado Pago request failed',
-      errorCode:
-        params.error instanceof IntegrationError ? params.error.code : ErrorCode.INTEGRATION_ERROR,
-      status: 'failed',
-      durationMs: Date.now() - params.startedAt,
-      context: PayloadSanitizer.sanitize({
-        provider: PspType.MERCADO_PAGO,
-        operation: params.operation,
-        endpoint: params.endpoint,
-        ...params.context,
-        error:
-          params.error instanceof Error
-            ? {
-                name: params.error.name,
-                message: params.error.message,
-              }
-            : params.error,
-      }) as Record<string, unknown>,
+    logExternalDependencyFailure({
+      provider: PspType.MERCADO_PAGO,
+      operation: params.operation,
+      endpoint: params.endpoint,
+      startedAt: params.startedAt,
+      error: params.error,
+      context: params.context,
     });
   }
 }

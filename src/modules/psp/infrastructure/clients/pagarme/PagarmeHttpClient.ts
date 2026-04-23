@@ -1,4 +1,9 @@
-import { appLogger } from '../../../../../app/server/logging';
+import {
+  logExternalDependencyFailure,
+  logExternalDependencyRateLimited,
+  logExternalDependencyRetry,
+  logExternalDependencySuccess,
+} from '../../../../../app/server/logging/externalDependencyLogger';
 import { IntegrationError, ValidationError } from '../../../../shared/application/errors';
 import { PspType } from '../../../../shared/domain/enums/pspType';
 import { ErrorCode } from '../../../../shared/domain/error-codes/errorCode';
@@ -80,6 +85,33 @@ export class PagarmeHttpClient {
           psp: PspType.PAGARME,
           operation: 'list_orders',
           endpoint: '/core/v5/orders',
+          onRetry: async (retryParams) => {
+            logExternalDependencyRetry({
+              provider: PspType.PAGARME,
+              operation: 'list_orders',
+              endpoint: '/core/v5/orders',
+              attempt: retryParams.attempt,
+              maxAttempts: retryParams.maxAttempts,
+              delayMs: retryParams.delayMs,
+              error: retryParams.error,
+              context: {
+                page: params.page,
+                size: params.size,
+              },
+            });
+          },
+          onRateLimited: async (rateLimitParams) => {
+            logExternalDependencyRateLimited({
+              provider: PspType.PAGARME,
+              operation: 'list_orders',
+              endpoint: '/core/v5/orders',
+              retryAfterMs: rateLimitParams.retryAfterMs,
+              context: {
+                page: params.page,
+                size: params.size,
+              },
+            });
+          },
         },
       );
 
@@ -148,6 +180,31 @@ export class PagarmeHttpClient {
           psp: PspType.PAGARME,
           operation: 'get_order_by_id',
           endpoint: '/core/v5/orders/:id',
+          onRetry: async (retryParams) => {
+            logExternalDependencyRetry({
+              provider: PspType.PAGARME,
+              operation: 'get_order_by_id',
+              endpoint: '/core/v5/orders/:id',
+              attempt: retryParams.attempt,
+              maxAttempts: retryParams.maxAttempts,
+              delayMs: retryParams.delayMs,
+              error: retryParams.error,
+              context: {
+                orderId: normalizedOrderId,
+              },
+            });
+          },
+          onRateLimited: async (rateLimitParams) => {
+            logExternalDependencyRateLimited({
+              provider: PspType.PAGARME,
+              operation: 'get_order_by_id',
+              endpoint: '/core/v5/orders/:id',
+              retryAfterMs: rateLimitParams.retryAfterMs,
+              context: {
+                orderId: normalizedOrderId,
+              },
+            });
+          },
         },
       );
 
@@ -284,17 +341,12 @@ export class PagarmeHttpClient {
     startedAt: number;
     context?: Record<string, unknown>;
   }): void {
-    appLogger.info({
-      eventType: 'psp_http_client_success',
-      message: 'Pagar.me request completed',
-      status: 'completed',
-      durationMs: Date.now() - params.startedAt,
-      context: {
-        provider: PspType.PAGARME,
-        operation: params.operation,
-        endpoint: params.endpoint,
-        ...params.context,
-      },
+    logExternalDependencySuccess({
+      provider: PspType.PAGARME,
+      operation: params.operation,
+      endpoint: params.endpoint,
+      startedAt: params.startedAt,
+      context: params.context,
     });
   }
 
@@ -305,26 +357,13 @@ export class PagarmeHttpClient {
     error: unknown;
     context?: Record<string, unknown>;
   }): void {
-    appLogger.error({
-      eventType: 'psp_http_client_failure',
-      message: 'Pagar.me request failed',
-      errorCode:
-        params.error instanceof IntegrationError ? params.error.code : ErrorCode.INTEGRATION_ERROR,
-      status: 'failed',
-      durationMs: Date.now() - params.startedAt,
-      context: PayloadSanitizer.sanitize({
-        provider: PspType.PAGARME,
-        operation: params.operation,
-        endpoint: params.endpoint,
-        ...params.context,
-        error:
-          params.error instanceof Error
-            ? {
-                name: params.error.name,
-                message: params.error.message,
-              }
-            : params.error,
-      }) as Record<string, unknown>,
+    logExternalDependencyFailure({
+      provider: PspType.PAGARME,
+      operation: params.operation,
+      endpoint: params.endpoint,
+      startedAt: params.startedAt,
+      error: params.error,
+      context: params.context,
     });
   }
 }

@@ -1,4 +1,5 @@
 import { appLogger } from '../../../../app/server/logging';
+import { logOperationalSummary } from '../../../../app/server/logging/operationalSummaryLogger';
 import type { PspSyncStrategy } from '../../../psp/domain/contracts/PspSyncStrategy';
 import { PspStrategyFactory } from '../../../psp/infrastructure/factories/PspStrategyFactory';
 import { PspType } from '../../../shared/domain/enums/pspType';
@@ -76,6 +77,17 @@ export class RunIncrementalSyncUseCase {
         },
       });
 
+      logOperationalSummary({
+        eventType: 'incremental_sync_operational_summary',
+        message: 'Incremental sync operational summary',
+        status: 'completed',
+        syncRunId: executionContext.syncRunId,
+        correlationId: executionContext.correlationId,
+        targetPsps,
+        durationMs,
+        snapshot,
+      });
+
       return {
         syncRunId: executionContext.syncRunId,
         syncRunDbId: executionContext.syncRunDbId,
@@ -91,6 +103,7 @@ export class RunIncrementalSyncUseCase {
       };
     } catch (error) {
       const snapshot = this.progressTracker.getSnapshot();
+      const durationMs = Date.now() - startedAtMs;
       const errorSummary =
         error instanceof Error ? error.message : 'Unknown incremental sync execution failure';
 
@@ -102,6 +115,38 @@ export class RunIncrementalSyncUseCase {
           errorSummary,
         });
       }
+
+      appLogger.error({
+        eventType: 'incremental_sync_failed',
+        message: 'Incremental sync execution failed',
+        status: 'failed',
+        durationMs,
+        context: {
+          syncRunId: executionContext.syncRunId,
+          syncRunDbId: executionContext.syncRunDbId,
+          correlationId: executionContext.correlationId,
+          targetPsps,
+          ...snapshot,
+          error:
+            error instanceof Error
+              ? {
+                  name: error.name,
+                  message: error.message,
+                }
+              : error,
+        },
+      });
+
+      logOperationalSummary({
+        eventType: 'incremental_sync_operational_summary',
+        message: 'Incremental sync operational summary',
+        status: 'failed',
+        syncRunId: executionContext.syncRunId,
+        correlationId: executionContext.correlationId,
+        targetPsps,
+        durationMs,
+        snapshot,
+      });
 
       throw error;
     }

@@ -1,4 +1,5 @@
 import { appLogger } from '../../../../app/server/logging';
+import { logOperationalSummary } from '../../../../app/server/logging/operationalSummaryLogger';
 import type { PspSyncStrategy } from '../../../psp/domain/contracts/PspSyncStrategy';
 import { PspStrategyFactory } from '../../../psp/infrastructure/factories/PspStrategyFactory';
 import { PspType } from '../../../shared/domain/enums/pspType';
@@ -76,6 +77,17 @@ export class RunSyncUseCase {
         },
       });
 
+      logOperationalSummary({
+        eventType: 'sync_operational_summary',
+        message: 'Sync operational summary',
+        status: 'completed',
+        syncRunId: executionContext.syncRunId,
+        correlationId: executionContext.correlationId,
+        targetPsps,
+        durationMs,
+        snapshot,
+      });
+
       return {
         syncRunId: executionContext.syncRunId,
         syncRunDbId: executionContext.syncRunDbId,
@@ -124,6 +136,17 @@ export class RunSyncUseCase {
                 }
               : error,
         },
+      });
+
+      logOperationalSummary({
+        eventType: 'sync_operational_summary',
+        message: 'Sync operational summary',
+        status: 'failed',
+        syncRunId: executionContext.syncRunId,
+        correlationId: executionContext.correlationId,
+        targetPsps,
+        durationMs,
+        snapshot,
       });
 
       throw error;

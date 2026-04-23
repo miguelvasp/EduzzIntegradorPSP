@@ -1,3 +1,4 @@
+import { logDatabaseOperationFailure } from '../../../../../app/server/logging/databaseOperationLogger';
 import type { PspType } from '../../../../shared/domain/enums/pspType';
 import {
   getSqlRequest,
@@ -21,83 +22,111 @@ export class SqlServerSyncCheckpointRepository implements SyncCheckpointReposito
   private readonly checkpointType = 'incremental';
 
   public async getByPsp(psp: PspType): Promise<SyncCheckpoint | null> {
-    const request = await getSqlRequest();
+    try {
+      const request = await getSqlRequest();
 
-    const result = await request
-      .input('sourceName', sql.NVarChar(50), psp)
-      .input('checkpointType', sql.NVarChar(30), this.checkpointType).query<SyncCheckpointRow>(`
-        SELECT TOP (1)
-          source_name,
-          checkpoint_type,
-          checkpoint_value,
-          checkpoint_at,
-          last_successful_run_id,
-          updated_at
-        FROM dbo.sync_checkpoints
-        WHERE source_name = @sourceName
-          AND checkpoint_type = @checkpointType
-      `);
-
-    const row = result.recordset[0];
-
-    if (!row) {
-      return null;
-    }
-
-    const checkpointValue = row.checkpoint_value ?? 'initial';
-
-    return {
-      psp: row.source_name,
-      checkpointValue,
-      lastSyncAt: row.checkpoint_at ?? undefined,
-      page: this.parsePage(checkpointValue),
-      offset: this.parseOffset(checkpointValue),
-      cursor: this.parseCursor(checkpointValue),
-      updatedAt: row.updated_at,
-    };
-  }
-
-  public async save(checkpoint: SyncCheckpoint): Promise<void> {
-    const request = await getSqlRequest();
-
-    await request
-      .input('sourceName', sql.NVarChar(50), checkpoint.psp)
-      .input('checkpointType', sql.NVarChar(30), this.checkpointType)
-      .input('checkpointValue', sql.NVarChar(200), checkpoint.checkpointValue)
-      .input('checkpointAt', sql.DateTime2, checkpoint.lastSyncAt ?? null).query(`
-        MERGE dbo.sync_checkpoints AS target
-        USING (
-          SELECT
-            @sourceName AS source_name,
-            @checkpointType AS checkpoint_type,
-            @checkpointValue AS checkpoint_value,
-            @checkpointAt AS checkpoint_at
-        ) AS source
-        ON target.source_name = source.source_name
-           AND target.checkpoint_type = source.checkpoint_type
-        WHEN MATCHED THEN
-          UPDATE SET
-            checkpoint_value = source.checkpoint_value,
-            checkpoint_at = source.checkpoint_at,
-            updated_at = SYSUTCDATETIME()
-        WHEN NOT MATCHED THEN
-          INSERT
-          (
+      const result = await request
+        .input('sourceName', sql.NVarChar(50), psp)
+        .input('checkpointType', sql.NVarChar(30), this.checkpointType).query<SyncCheckpointRow>(`
+          SELECT TOP (1)
             source_name,
             checkpoint_type,
             checkpoint_value,
             checkpoint_at,
+            last_successful_run_id,
             updated_at
-          )
-          VALUES
-          (
-            source.source_name,
-            source.checkpoint_type,
-            source.checkpoint_value,
-            source.checkpoint_at,
-            SYSUTCDATETIME()
-          );
-      `);
+          FROM dbo.sync_checkpoints
+          WHERE source_name = @sourceName
+            AND checkpoint_type = @checkpointType
+        `);
+
+      const row = result.recordset[0];
+
+      if (!row) {
+        return null;
+      }
+
+      const checkpointValue = row.checkpoint_value ?? 'initial';
+
+      return {
+        psp: row.source_name,
+        checkpointValue,
+        lastSyncAt: row.checkpoint_at ?? undefined,
+        page: this.parsePage(checkpointValue),
+        offset: this.parseOffset(checkpointValue),
+        cursor: this.parseCursor(checkpointValue),
+        updatedAt: row.updated_at,
+      };
+    } catch (error) {
+      logDatabaseOperationFailure({
+        repository: 'SqlServerSyncCheckpointRepository',
+        operation: 'getByPsp',
+        entity: 'sync_checkpoints',
+        error,
+        context: {
+          psp,
+        },
+      });
+
+      throw error;
+    }
+  }
+
+  public async save(checkpoint: SyncCheckpoint): Promise<void> {
+    try {
+      const request = await getSqlRequest();
+
+      await request
+        .input('sourceName', sql.NVarChar(50), checkpoint.psp)
+        .input('checkpointType', sql.NVarChar(30), this.checkpointType)
+        .input('checkpointValue', sql.NVarChar(200), checkpoint.checkpointValue)
+        .input('checkpointAt', sql.DateTime2, checkpoint.lastSyncAt ?? null).query(`
+          MERGE dbo.sync_checkpoints AS target
+          USING (
+            SELECT
+              @sourceName AS source_name,
+              @checkpointType AS checkpoint_type,
+              @checkpointValue AS checkpoint_value,
+              @checkpointAt AS checkpoint_at
+          ) AS source
+          ON target.source_name = source.source_name
+             AND target.checkpoint_type = source.checkpoint_type
+          WHEN MATCHED THEN
+            UPDATE SET
+              checkpoint_value = source.checkpoint_value,
+              checkpoint_at = source.checkpoint_at,
+              updated_at = SYSUTCDATETIME()
+          WHEN NOT MATCHED THEN
+            INSERT
+            (
+              source_name,
+              checkpoint_type,
+              checkpoint_value,
+              checkpoint_at,
+              updated_at
+            )
+            VALUES
+            (
+              source.source_name,
+              source.checkpoint_type,
+              source.checkpoint_value,
+              source.checkpoint_at,
+              SYSUTCDATETIME()
+            );
+        `);
+    } catch (error) {
+      logDatabaseOperationFailure({
+        repository: 'SqlServerSyncCheckpointRepository',
+        operation: 'save',
+        entity: 'sync_checkpoints',
+        error,
+        context: {
+          psp: checkpoint.psp,
+        },
+      });
+
+      throw error;
+    }
   }
 
   private parsePage(checkpointValue: string): number | undefined {

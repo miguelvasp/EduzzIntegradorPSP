@@ -1,27 +1,30 @@
 import cors from '@fastify/cors';
-import Fastify from 'fastify';
-import { handleHttpError } from '../../modules/shared/infrastructure/http/error-handler';
+import Fastify, { type FastifyInstance } from 'fastify';
 import { registerTransactionRoutes } from '../../modules/transactions/presentation/http/transactions.routes';
-import { registerHttpLogging } from './middlewares/httpLogging';
+import { registerErrorLogging } from './http/registerErrorLogging';
+import { registerRequestLogging } from './http/registerRequestLogging';
 
-export function createServer() {
+export function createServer(): FastifyInstance {
   const app = Fastify({
-    logger: true,
+    logger: false,
+    disableRequestLogging: true,
   });
 
-  registerHttpLogging(app);
-
-  void app.register(cors);
-  void app.register(registerTransactionRoutes);
-
-  app.setErrorHandler((error, request, reply) => {
-    handleHttpError(error, request, reply);
+  void app.register(cors, {
+    origin: true,
   });
+
+  registerRequestLogging(app);
+  registerErrorLogging(app);
 
   app.get('/health', async () => {
     return {
       status: 'ok',
     };
+  });
+
+  void app.register(async (instance) => {
+    await registerTransactionRoutes(instance);
   });
 
   return app;

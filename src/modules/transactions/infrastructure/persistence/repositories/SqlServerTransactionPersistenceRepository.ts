@@ -1,3 +1,4 @@
+import { logDatabaseOperationFailure } from '../../../../../app/server/logging/databaseOperationLogger';
 import { PspType } from '../../../../shared/domain/enums/pspType';
 import {
   getSqlRequest,
@@ -55,75 +56,90 @@ export class SqlServerTransactionPersistenceRepository implements TransactionPer
     psp: PspType,
     externalId: string,
   ): Promise<TransactionEntity | null> {
-    const request = await getSqlRequest();
+    try {
+      const request = await getSqlRequest();
 
-    const transactionResult = await request
-      .input('psp', sql.NVarChar(30), psp)
-      .input('externalId', sql.NVarChar(100), externalId).query<TransactionRow>(`
-        SELECT TOP (1)
-          t.id,
-          t.psp,
-          t.external_id,
-          t.status,
-          t.payment_method,
-          t.original_amount,
-          t.net_amount,
-          t.fees,
-          t.installment_count,
-          t.currency,
-          t.psp_created_at,
-          t.psp_updated_at,
-          t.first_seen_at,
-          t.last_synced_at,
-          s.external_id AS payer_external_id,
-          s.name AS payer_name,
-          s.email AS payer_email,
-          s.document_hash AS payer_document_hash,
-          s.document_type AS payer_document_type
-        FROM dbo.transactions t
-        OUTER APPLY (
+      const transactionResult = await request
+        .input('psp', sql.NVarChar(30), psp)
+        .input('externalId', sql.NVarChar(100), externalId).query<TransactionRow>(`
           SELECT TOP (1)
-            external_id,
-            name,
-            email,
-            document_hash,
-            document_type
-          FROM dbo.transaction_payer_snapshots s
-          WHERE s.transaction_id = t.id
-          ORDER BY s.snapshot_version DESC, s.id DESC
-        ) s
-        WHERE t.psp = @psp
-          AND t.external_id = @externalId
-      `);
+            t.id,
+            t.psp,
+            t.external_id,
+            t.status,
+            t.payment_method,
+            t.original_amount,
+            t.net_amount,
+            t.fees,
+            t.installment_count,
+            t.currency,
+            t.psp_created_at,
+            t.psp_updated_at,
+            t.first_seen_at,
+            t.last_synced_at,
+            s.external_id AS payer_external_id,
+            s.name AS payer_name,
+            s.email AS payer_email,
+            s.document_hash AS payer_document_hash,
+            s.document_type AS payer_document_type
+          FROM dbo.transactions t
+          OUTER APPLY (
+            SELECT TOP (1)
+              external_id,
+              name,
+              email,
+              document_hash,
+              document_type
+            FROM dbo.transaction_payer_snapshots s
+            WHERE s.transaction_id = t.id
+            ORDER BY s.snapshot_version DESC, s.id DESC
+          ) s
+          WHERE t.psp = @psp
+            AND t.external_id = @externalId
+        `);
 
-    const transactionRow = transactionResult.recordset[0];
+      const transactionRow = transactionResult.recordset[0];
 
-    if (!transactionRow) {
-      return null;
+      if (!transactionRow) {
+        return null;
+      }
+
+      const installmentsRequest = await getSqlRequest();
+
+      const installmentsResult = await installmentsRequest.input(
+        'transactionId',
+        sql.BigInt,
+        transactionRow.id,
+      ).query<InstallmentRow>(`
+          SELECT
+            id,
+            transaction_id,
+            installment_number,
+            amount,
+            fees,
+            status,
+            due_date,
+            paid_at
+          FROM dbo.installments
+          WHERE transaction_id = @transactionId
+          ORDER BY installment_number ASC
+        `);
+
+      return this.mapTransaction(transactionRow, installmentsResult.recordset);
+    } catch (error) {
+      logDatabaseOperationFailure({
+        repository: 'SqlServerTransactionPersistenceRepository',
+        operation: 'findByExternalReference',
+        entity: 'transactions',
+        error,
+        context: {
+          psp,
+          externalId,
+        },
+      });
+
+      throw error;
     }
-
-    const installmentsRequest = await getSqlRequest();
-
-    const installmentsResult = await installmentsRequest.input(
-      'transactionId',
-      sql.BigInt,
-      transactionRow.id,
-    ).query<InstallmentRow>(`
-        SELECT
-          id,
-          transaction_id,
-          installment_number,
-          amount,
-          fees,
-          status,
-          due_date,
-          paid_at
-        FROM dbo.installments
-        WHERE transaction_id = @transactionId
-        ORDER BY installment_number ASC
-      `);
-
-    return this.mapTransaction(transactionRow, installmentsResult.recordset);
   }
 
   public async insert(params: {
@@ -131,60 +147,76 @@ export class SqlServerTransactionPersistenceRepository implements TransactionPer
     payerId: number;
     lastSyncedAt: Date;
   }): Promise<number> {
-    const request = await getSqlRequest();
+    try {
+      const request = await getSqlRequest();
 
-    const result = await request
-      .input('psp', sql.NVarChar(30), params.transaction.externalReference.psp)
-      .input('externalId', sql.NVarChar(100), params.transaction.externalReference.externalId)
-      .input('status', sql.NVarChar(40), params.transaction.status)
-      .input('paymentMethod', sql.NVarChar(30), params.transaction.paymentMethod)
-      .input('originalAmount', sql.BigInt, params.transaction.originalAmount.amountInCents)
-      .input('netAmount', sql.BigInt, params.transaction.netAmount.amountInCents)
-      .input('fees', sql.BigInt, params.transaction.fees.amountInCents)
-      .input('installmentCount', sql.Int, params.transaction.installmentCount)
-      .input('currency', sql.Char(3), params.transaction.currency)
-      .input('payerId', sql.BigInt, params.payerId)
-      .input('pspCreatedAt', sql.DateTime2, params.transaction.createdAt)
-      .input('pspUpdatedAt', sql.DateTime2, params.transaction.updatedAt)
-      .input('lastSyncedAt', sql.DateTime2, params.lastSyncedAt).query<{ id: number }>(`
-        INSERT INTO dbo.transactions
-        (
-          psp,
-          external_id,
-          status,
-          payment_method,
-          original_amount,
-          net_amount,
-          fees,
-          installment_count,
-          currency,
-          payer_id,
-          psp_created_at,
-          psp_updated_at,
-          last_synced_at,
-          last_status_changed_at
-        )
-        OUTPUT INSERTED.id
-        VALUES
-        (
-          @psp,
-          @externalId,
-          @status,
-          @paymentMethod,
-          @originalAmount,
-          @netAmount,
-          @fees,
-          @installmentCount,
-          @currency,
-          @payerId,
-          @pspCreatedAt,
-          @pspUpdatedAt,
-          @lastSyncedAt,
-          @pspUpdatedAt
-        )
-      `);
+      const result = await request
+        .input('psp', sql.NVarChar(30), params.transaction.externalReference.psp)
+        .input('externalId', sql.NVarChar(100), params.transaction.externalReference.externalId)
+        .input('status', sql.NVarChar(40), params.transaction.status)
+        .input('paymentMethod', sql.NVarChar(30), params.transaction.paymentMethod)
+        .input('originalAmount', sql.BigInt, params.transaction.originalAmount.amountInCents)
+        .input('netAmount', sql.BigInt, params.transaction.netAmount.amountInCents)
+        .input('fees', sql.BigInt, params.transaction.fees.amountInCents)
+        .input('installmentCount', sql.Int, params.transaction.installmentCount)
+        .input('currency', sql.Char(3), params.transaction.currency)
+        .input('payerId', sql.BigInt, params.payerId)
+        .input('pspCreatedAt', sql.DateTime2, params.transaction.createdAt)
+        .input('pspUpdatedAt', sql.DateTime2, params.transaction.updatedAt)
+        .input('lastSyncedAt', sql.DateTime2, params.lastSyncedAt).query<{ id: number }>(`
+          INSERT INTO dbo.transactions
+          (
+            psp,
+            external_id,
+            status,
+            payment_method,
+            original_amount,
+            net_amount,
+            fees,
+            installment_count,
+            currency,
+            payer_id,
+            psp_created_at,
+            psp_updated_at,
+            last_synced_at,
+            last_status_changed_at
+          )
+          OUTPUT INSERTED.id
+          VALUES
+          (
+            @psp,
+            @externalId,
+            @status,
+            @paymentMethod,
+            @originalAmount,
+            @netAmount,
+            @fees,
+            @installmentCount,
+            @currency,
+            @payerId,
+            @pspCreatedAt,
+            @pspUpdatedAt,
+            @lastSyncedAt,
+            @pspUpdatedAt
+          )
+        `);
 
-    return result.recordset[0].id;
+      return result.recordset[0].id;
+    } catch (error) {
+      logDatabaseOperationFailure({
+        repository: 'SqlServerTransactionPersistenceRepository',
+        operation: 'insert',
+        entity: 'transactions',
+        error,
+        context: {
+          psp: params.transaction.externalReference.psp,
+          externalId: params.transaction.externalReference.externalId,
+          payerId: params.payerId,
+        },
+      });
+
+      throw error;
+    }
   }
 
   public async update(params: {
@@ -193,39 +225,56 @@ export class SqlServerTransactionPersistenceRepository implements TransactionPer
     payerId: number;
     lastSyncedAt: Date;
   }): Promise<void> {
-    const request = await getSqlRequest();
+    try {
+      const request = await getSqlRequest();
 
-    await request
-      .input('transactionId', sql.BigInt, params.transactionId)
-      .input('status', sql.NVarChar(40), params.transaction.status)
-      .input('paymentMethod', sql.NVarChar(30), params.transaction.paymentMethod)
-      .input('originalAmount', sql.BigInt, params.transaction.originalAmount.amountInCents)
-      .input('netAmount', sql.BigInt, params.transaction.netAmount.amountInCents)
-      .input('fees', sql.BigInt, params.transaction.fees.amountInCents)
-      .input('installmentCount', sql.Int, params.transaction.installmentCount)
-      .input('currency', sql.Char(3), params.transaction.currency)
-      .input('payerId', sql.BigInt, params.payerId)
-      .input('pspUpdatedAt', sql.DateTime2, params.transaction.updatedAt)
-      .input('lastSyncedAt', sql.DateTime2, params.lastSyncedAt).query(`
-        UPDATE dbo.transactions
-        SET
-          status = @status,
-          payment_method = @paymentMethod,
-          original_amount = @originalAmount,
-          net_amount = @netAmount,
-          fees = @fees,
-          installment_count = @installmentCount,
-          currency = @currency,
-          payer_id = @payerId,
-          psp_updated_at = @pspUpdatedAt,
-          last_synced_at = @lastSyncedAt,
-          last_status_changed_at = CASE
-            WHEN status <> @status THEN @pspUpdatedAt
-            ELSE last_status_changed_at
-          END,
-          updated_at = SYSUTCDATETIME()
-        WHERE id = @transactionId
-      `);
+      await request
+        .input('transactionId', sql.BigInt, params.transactionId)
+        .input('status', sql.NVarChar(40), params.transaction.status)
+        .input('paymentMethod', sql.NVarChar(30), params.transaction.paymentMethod)
+        .input('originalAmount', sql.BigInt, params.transaction.originalAmount.amountInCents)
+        .input('netAmount', sql.BigInt, params.transaction.netAmount.amountInCents)
+        .input('fees', sql.BigInt, params.transaction.fees.amountInCents)
+        .input('installmentCount', sql.Int, params.transaction.installmentCount)
+        .input('currency', sql.Char(3), params.transaction.currency)
+        .input('payerId', sql.BigInt, params.payerId)
+        .input('pspUpdatedAt', sql.DateTime2, params.transaction.updatedAt)
+        .input('lastSyncedAt', sql.DateTime2, params.lastSyncedAt).query(`
+          UPDATE dbo.transactions
+          SET
+            status = @status,
+            payment_method = @paymentMethod,
+            original_amount = @originalAmount,
+            net_amount = @netAmount,
+            fees = @fees,
+            installment_count = @installmentCount,
+            currency = @currency,
+            payer_id = @payerId,
+            psp_updated_at = @pspUpdatedAt,
+            last_synced_at = @lastSyncedAt,
+            last_status_changed_at = CASE
+              WHEN status <> @status THEN @pspUpdatedAt
+              ELSE last_status_changed_at
+            END,
+            updated_at = SYSUTCDATETIME()
+          WHERE id = @transactionId
+        `);
+    } catch (error) {
+      logDatabaseOperationFailure({
+        repository: 'SqlServerTransactionPersistenceRepository',
+        operation: 'update',
+        entity: 'transactions',
+        error,
+        context: {
+          transactionId: params.transactionId,
+          psp: params.transaction.externalReference.psp,
+          externalId: params.transaction.externalReference.externalId,
+          payerId: params.payerId,
+        },
+      });
+
+      throw error;
+    }
   }
 
   private mapTransaction(
