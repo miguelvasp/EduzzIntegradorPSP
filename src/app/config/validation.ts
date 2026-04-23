@@ -76,33 +76,42 @@ export const environmentSchema = z
     PORT: portSchema.default(3000),
     LOG_LEVEL: requiredStringSchema.default('info'),
     DOCS_ENABLED: booleanSchema.optional(),
+
     DATABASE_HOST: requiredStringSchema.default('localhost'),
     DATABASE_PORT: portSchema.default(1433),
-    DATABASE_NAME: requiredStringSchema.default('eduzz_integrador_psp'),
+    DATABASE_NAME: requiredStringSchema.default('EduzzMultiPsp'),
     DATABASE_USER: requiredStringSchema.default('sa'),
     DATABASE_PASSWORD: optionalStringSchema,
     DATABASE_CONNECTION_TIMEOUT_MS: positiveIntegerSchema.default(5000),
     DATABASE_POOL_MIN: nonNegativeIntegerSchema.default(1),
     DATABASE_POOL_MAX: nonNegativeIntegerSchema.default(10),
+    DATABASE_ENCRYPT: booleanSchema.default(false),
+    DATABASE_TRUST_SERVER_CERTIFICATE: booleanSchema.default(true),
+
     PSP_USE_MOCK_SERVER: booleanSchema.default(true),
     PSP_TIMEOUT_MS: positiveIntegerSchema.default(10000),
     PSP_RETRY_ATTEMPTS: nonNegativeIntegerSchema.default(2),
-    PAGARME_BASE_URL: urlSchema.default('http://localhost:4010/pagarme'),
+    PAGARME_BASE_URL: urlSchema.default('http://localhost:3334'),
     PAGARME_API_KEY: optionalStringSchema,
-    MERCADOPAGO_BASE_URL: urlSchema.default('http://localhost:4020/mercadopago'),
+    MERCADOPAGO_BASE_URL: urlSchema.default('http://localhost:3334'),
     MERCADOPAGO_ACCESS_TOKEN: optionalStringSchema,
+
     SYNC_PAGE_SIZE: positiveIntegerSchema.default(20),
     SYNC_MAX_PAGE_SIZE: positiveIntegerSchema.default(100),
     SYNC_INCREMENTAL_WINDOW_MINUTES: positiveIntegerSchema.default(60),
     SYNC_SAFETY_OVERLAP_MINUTES: positiveIntegerSchema.default(5),
+
     SECURITY_HASH_SALT: optionalStringSchema,
     SECURITY_MASK_SENSITIVE_DATA: booleanSchema.default(true),
     SECURITY_REDACT_SECRETS_IN_LOGS: booleanSchema.default(true),
+
     OBS_STRUCTURED_LOGGING: booleanSchema.default(true),
     OBS_METRICS_ENABLED: booleanSchema.default(false),
     OBS_REQUEST_CORRELATION_ENABLED: booleanSchema.default(true),
+
     CACHE_ENABLED: booleanSchema.default(false),
     CACHE_TTL_SECONDS: positiveIntegerSchema.default(60),
+
     OUTBOX_DISPATCHER_ENABLED: booleanSchema.default(false),
     OUTBOX_BATCH_SIZE: positiveIntegerSchema.default(50),
     OUTBOX_POLL_INTERVAL_MS: positiveIntegerSchema.default(5000),
@@ -128,7 +137,9 @@ export const environmentSchema = z
 
 export type ValidatedEnvironment = z.output<typeof environmentSchema>;
 
-export function validateEnvironment(input: Record<string, string | undefined>): ValidatedEnvironment {
+export function validateEnvironment(
+  input: Record<string, string | undefined>,
+): ValidatedEnvironment {
   return environmentSchema.parse(input);
 }
 

@@ -1,5 +1,6 @@
 import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
+import { registerSyncRoutes } from '../../modules/sync/presentation/http/sync.routes';
 import { registerTransactionRoutes } from '../../modules/transactions/presentation/http/transactions.routes';
 import { registerErrorLogging } from './http/registerErrorLogging';
 import { registerRequestLogging } from './http/registerRequestLogging';
@@ -24,6 +25,7 @@ export function createServer(): FastifyInstance {
   });
 
   void app.register(async (instance) => {
+    await registerSyncRoutes(instance);
     await registerTransactionRoutes(instance);
   });
 

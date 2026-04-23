@@ -1,5 +1,10 @@
-import type { FastifyInstance } from 'fastify';
-import { ApplicationError, NotFoundError } from '../../../modules/shared/application/errors';
+import type { FastifyError, FastifyInstance } from 'fastify';
+import {
+  ApplicationError,
+  NotFoundError,
+  ValidationError,
+} from '../../../modules/shared/application/errors';
+import { ErrorCode } from '../../../modules/shared/domain/error-codes/errorCode';
 import { PayloadSanitizer } from '../../../modules/shared/infrastructure/security/PayloadSanitizer';
 import { appLogger } from '../logging';
 import { ensureRequestContext, getRequestDurationMs, REQUEST_ID_HEADER } from './requestContext';
@@ -43,7 +48,7 @@ export function registerErrorLogging(app: FastifyInstance): void {
   app.setErrorHandler(async (error, request, reply) => {
     ensureRequestContext(request, reply);
 
-    const normalizedError = ApplicationError.fromUnknown(error);
+    const normalizedError = normalizeApplicationError(error);
 
     appLogger.error({
       eventType: 'http_request_failed',
@@ -77,6 +82,26 @@ export function registerErrorLogging(app: FastifyInstance): void {
       }),
     );
   });
+}
+
+function normalizeApplicationError(error: unknown): ApplicationError {
+  const fastifyError = error as FastifyError & {
+    validation?: unknown;
+    code?: string;
+    statusCode?: number;
+  };
+
+  if (fastifyError?.validation || fastifyError?.code === 'FST_ERR_VALIDATION') {
+    return new ValidationError({
+      message: fastifyError.message,
+      code: ErrorCode.VALIDATION_ERROR,
+      details: {
+        validation: PayloadSanitizer.sanitize(fastifyError.validation),
+      },
+    });
+  }
+
+  return ApplicationError.fromUnknown(error);
 }
 
 function buildErrorResponse(params: {

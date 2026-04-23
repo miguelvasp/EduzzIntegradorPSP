@@ -4,20 +4,34 @@ services:
     container_name: eduzz-integrador-db
     environment:
       ACCEPT_EULA: 'Y'
-      MSSQL_SA_PASSWORD: 'Your_strong_Password123'
+      MSSQL_SA_PASSWORD: 'Eduzz@12345'
       MSSQL_PID: 'Developer'
     ports:
       - '1433:1433'
+    volumes:
+      - sqlserver-data:/var/opt/mssql
     healthcheck:
       test:
         [
           'CMD-SHELL',
-          "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Your_strong_Password123' -Q 'SELECT 1' || exit 1",
+          "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Eduzz@12345' -Q 'SELECT 1' || exit 1",
         ]
       interval: 15s
       timeout: 5s
-      retries: 10
+      retries: 20
       start_period: 30s
+
+  db-bootstrap:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: eduzz-integrador-db-bootstrap
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - >
+        /opt/mssql-tools18/bin/sqlcmd -C -S db -U sa -P 'Eduzz@12345'
+        -Q "IF DB_ID(N'EduzzMultiPsp') IS NULL BEGIN CREATE DATABASE EduzzMultiPsp; END;"
 
   mock-server:
     image: node:22-alpine
@@ -35,12 +49,12 @@ services:
       test:
         [
           'CMD-SHELL',
-          'wget -qO- http://localhost:3334/core/v5/orders?page=1&size=1 >/dev/null 2>&1 || exit 1',
+          'wget -qO- "http://localhost:3334/core/v5/orders?page=1&size=1" >/dev/null 2>&1 || exit 1',
         ]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 10s
+      start_period: 30s
 
   app:
     image: node:22-alpine
@@ -59,21 +73,23 @@ services:
 
       DATABASE_HOST: db
       DATABASE_PORT: 1433
-      DATABASE_NAME: eduzz_integrador_psp
+      DATABASE_NAME: EduzzMultiPsp
       DATABASE_USER: sa
-      DATABASE_PASSWORD: Your_strong_Password123
+      DATABASE_PASSWORD: Eduzz@12345
       DATABASE_CONNECTION_TIMEOUT_MS: 5000
       DATABASE_POOL_MIN: 1
       DATABASE_POOL_MAX: 10
+      DATABASE_ENCRYPT: 'false'
+      DATABASE_TRUST_SERVER_CERTIFICATE: 'true'
 
       PSP_USE_MOCK_SERVER: 'true'
       PSP_TIMEOUT_MS: 10000
       PSP_RETRY_ATTEMPTS: 2
 
-      PAGARME_BASE_URL: http://mock-server:3334/core/v5
+      PAGARME_BASE_URL: http://mock-server:3334
       PAGARME_API_KEY: mock-api-key
 
-      MERCADOPAGO_BASE_URL: http://mock-server:3334/v1
+      MERCADOPAGO_BASE_URL: http://mock-server:3334
       MERCADOPAGO_ACCESS_TOKEN: mock-access-token
 
       SYNC_PAGE_SIZE: 20
@@ -99,7 +115,16 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      db:
-        condition: service_healthy
+      db-bootstrap:
+        condition: service_completed_successfully
       mock-server:
-        condition: service_healthy
+        condition: service_started
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- "http://localhost:3000/health" >/dev/null 2>&1 || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  sqlserver-data:
