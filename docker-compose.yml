@@ -39,6 +39,7 @@ services:
     working_dir: /app
     volumes:
       - ./:/app
+      - mock-node-modules:/app/node_modules
     command: sh -c "npm install && npx tsx src/mock-server/index.ts"
     environment:
       MOCK_SERVER_HOST: 0.0.0.0
@@ -62,6 +63,7 @@ services:
     working_dir: /app
     volumes:
       - ./:/app
+      - app-node-modules:/app/node_modules
     command: sh -c "npm install && npx tsx src/app/server/index.ts"
     environment:
       APP_NAME: eduzz-integrador-psp
@@ -128,3 +130,5 @@ services:
 
 volumes:
   sqlserver-data:
+  app-node-modules:
+  mock-node-modules:
