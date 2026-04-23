@@ -14,7 +14,7 @@ async function bootstrap() {
       status: 'started',
     });
 
-    buildContainer();
+    await buildContainer();
 
     const app = createServer();
 

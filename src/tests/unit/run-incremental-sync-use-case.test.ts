@@ -22,7 +22,7 @@ describe('RunIncrementalSyncUseCase', () => {
     };
   }
 
-  it('deve executar sync incremental para PSP específico', async () => {
+  it('deve executar sync incremental para PSP específico com lifecycle', async () => {
     const strategy = {
       getPsp: vi.fn().mockReturnValue(PspType.PAGARME),
       listPage: vi.fn().mockResolvedValue({
@@ -45,6 +45,27 @@ describe('RunIncrementalSyncUseCase', () => {
 
     const progressTracker = new SyncProgressTracker();
     const syncPageProcessor = new SyncPageProcessor(progressTracker);
+    const syncRunLifecycleService = {
+      startRun: vi.fn().mockImplementation(async (context) => ({
+        ...context,
+        syncRunDbId: 111,
+      })),
+      completeRun: vi.fn().mockResolvedValue(undefined),
+      startSource: vi.fn().mockResolvedValue(222),
+      completeSource: vi.fn().mockResolvedValue(undefined),
+      startPage: vi.fn().mockResolvedValue(333),
+      completePage: vi.fn().mockResolvedValue(undefined),
+      calculateSourceCounters: vi.fn().mockReturnValue({
+        itemsRead: 1,
+        itemsProcessed: 1,
+        itemsSucceeded: 1,
+        itemsFailed: 0,
+      }),
+      calculatePageCounters: vi.fn().mockReturnValue({
+        itemsRead: 1,
+        itemsProcessed: 1,
+      }),
+    };
 
     const useCase = new RunIncrementalSyncUseCase(
       strategyFactory as never,
@@ -55,6 +76,7 @@ describe('RunIncrementalSyncUseCase', () => {
       }),
       syncPageProcessor,
       progressTracker,
+      syncRunLifecycleService as never,
     );
 
     const result = await useCase.execute(
@@ -63,10 +85,21 @@ describe('RunIncrementalSyncUseCase', () => {
       }),
     );
 
+    expect(syncRunLifecycleService.startRun).toHaveBeenCalledTimes(1);
+    expect(syncRunLifecycleService.startSource).toHaveBeenCalledTimes(1);
+    expect(syncRunLifecycleService.startPage).toHaveBeenCalledTimes(1);
+    expect(syncRunLifecycleService.completePage).toHaveBeenCalledTimes(1);
+    expect(syncRunLifecycleService.completeSource).toHaveBeenCalledTimes(1);
+    expect(syncRunLifecycleService.completeRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'completed',
+      }),
+    );
     expect(strategyFactory.resolve).toHaveBeenCalledWith(PspType.PAGARME);
     expect(checkpointRepository.getByPsp).toHaveBeenCalledWith(PspType.PAGARME);
     expect(checkpointRepository.save).toHaveBeenCalledTimes(1);
     expect(result.targetPsps).toEqual([PspType.PAGARME]);
+    expect(result.syncRunDbId).toBe(111);
     expect(result.pagesProcessed).toBe(1);
     expect(result.itemsRead).toBe(1);
   });
@@ -108,7 +141,6 @@ describe('RunIncrementalSyncUseCase', () => {
 
     const progressTracker = new SyncProgressTracker();
     const syncPageProcessor = new SyncPageProcessor(progressTracker);
-
     const useCase = new RunIncrementalSyncUseCase(
       strategyFactory as never,
       checkpointRepository as never,
@@ -219,5 +251,73 @@ describe('RunIncrementalSyncUseCase', () => {
     );
 
     expect(strategy.adapt).not.toHaveBeenCalled();
+  });
+
+  it('deve fechar run incremental como failed quando houver falha fatal', async () => {
+    const strategy = {
+      getPsp: vi.fn().mockReturnValue(PspType.PAGARME),
+      listPage: vi.fn().mockRejectedValue(new Error('incremental upstream fatal failure')),
+      adapt: vi.fn(),
+    };
+
+    const strategyFactory = {
+      resolve: vi.fn().mockReturnValue(strategy),
+    };
+
+    const checkpointRepository = {
+      getByPsp: vi.fn().mockResolvedValue(null),
+      save: vi.fn(),
+    };
+
+    const progressTracker = new SyncProgressTracker();
+    const syncPageProcessor = new SyncPageProcessor(progressTracker);
+    const syncRunLifecycleService = {
+      startRun: vi.fn().mockImplementation(async (context) => ({
+        ...context,
+        syncRunDbId: 444,
+      })),
+      completeRun: vi.fn().mockResolvedValue(undefined),
+      startSource: vi.fn().mockResolvedValue(555),
+      completeSource: vi.fn().mockResolvedValue(undefined),
+      startPage: vi.fn(),
+      completePage: vi.fn(),
+      calculateSourceCounters: vi.fn().mockReturnValue({
+        itemsRead: 0,
+        itemsProcessed: 0,
+        itemsSucceeded: 0,
+        itemsFailed: 0,
+      }),
+      calculatePageCounters: vi.fn().mockReturnValue({
+        itemsRead: 0,
+        itemsProcessed: 0,
+      }),
+    };
+
+    const useCase = new RunIncrementalSyncUseCase(
+      strategyFactory as never,
+      checkpointRepository as never,
+      new SyncWindowCalculator({
+        initialLookbackMinutes: 60,
+        overlapMinutes: 15,
+      }),
+      syncPageProcessor,
+      progressTracker,
+      syncRunLifecycleService as never,
+    );
+
+    await expect(
+      useCase.execute(
+        createContext({
+          targetPsp: PspType.PAGARME,
+        }),
+      ),
+    ).rejects.toThrow('incremental upstream fatal failure');
+
+    expect(syncRunLifecycleService.completeRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failed',
+        errorSummary: 'incremental upstream fatal failure',
+      }),
+    );
   });
 });

@@ -1,11 +1,12 @@
 import { PspType } from '../../../shared/domain/enums/pspType';
 
-export type SyncTriggerSource = 'cli';
+export type SyncTriggerSource = 'cli' | 'http' | 'scheduler';
 
 export type SyncExecutionMode = 'standard' | 'verbose';
 
 export type SyncExecutionContext = {
   syncRunId: string;
+  syncRunDbId?: number;
   correlationId: string;
   triggeredBy: SyncTriggerSource;
   targetPsp?: PspType;
@@ -19,6 +20,7 @@ export type SyncExecutionContext = {
 
 export type RunSyncResult = {
   syncRunId: string;
+  syncRunDbId?: number;
   correlationId: string;
   startedAt: Date;
   finishedAt: Date;

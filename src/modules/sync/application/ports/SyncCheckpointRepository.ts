@@ -1,7 +1,8 @@
-import { PspType } from '../../../shared/domain/enums/pspType';
+import type { PspType } from '../../../shared/domain/enums/pspType';
 
 export type SyncCheckpoint = {
   psp: PspType;
+  checkpointValue: string;
   lastSyncAt?: Date;
   page?: number;
   offset?: number;

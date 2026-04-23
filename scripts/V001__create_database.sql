@@ -1,2 +1,5 @@
-CREATE DATABASE EduzzMultiPsp;
+IF DB_ID(N'EduzzMultiPsp') IS NULL
+BEGIN
+    CREATE DATABASE EduzzMultiPsp;
+END;
 GO

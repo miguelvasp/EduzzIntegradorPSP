@@ -23,6 +23,8 @@ export interface DatabaseConfiguration {
   connectionTimeoutMs: number;
   poolMin: number;
   poolMax: number;
+  encrypt: boolean;
+  trustServerCertificate: boolean;
 }
 
 export interface PspProviderConfiguration {
@@ -113,6 +115,8 @@ export function createConfiguration(environment: ValidatedEnvironment): AppConfi
       connectionTimeoutMs: environment.DATABASE_CONNECTION_TIMEOUT_MS,
       poolMin: environment.DATABASE_POOL_MIN,
       poolMax: environment.DATABASE_POOL_MAX,
+      encrypt: process.env.DATABASE_ENCRYPT === 'true',
+      trustServerCertificate: process.env.DATABASE_TRUST_SERVER_CERTIFICATE === 'true',
     },
     psp: {
       useMockServer: environment.PSP_USE_MOCK_SERVER,

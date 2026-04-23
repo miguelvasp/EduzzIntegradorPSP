@@ -1,0 +1,52 @@
+export function createPagarmeOrderFixture(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'or_pag_001',
+    code: 'order-001',
+    closed: true,
+    status: 'paid',
+    currency: 'BRL',
+    amount: 10000,
+    closed_at: '2026-04-21T10:00:00.000Z',
+    created_at: '2026-04-21T09:00:00.000Z',
+    updated_at: '2026-04-21T10:00:00.000Z',
+    customer: {
+      id: 'cus_pag_001',
+      name: 'Maria Silva',
+      email: 'maria@example.com',
+      document: '12345678901',
+      document_type: 'CPF',
+      type: 'individual',
+    },
+    charges: [
+      {
+        id: 'ch_pag_001',
+        code: 'charge-001',
+        gateway_id: 'gw_001',
+        status: 'paid',
+        amount: 10000,
+        paid_amount: 9700,
+        payment_method: 'credit_card',
+        paid_at: '2026-04-21T10:00:00.000Z',
+        created_at: '2026-04-21T09:00:00.000Z',
+        updated_at: '2026-04-21T10:00:00.000Z',
+        last_transaction: {
+          id: 'tran_pag_001',
+          transaction_type: 'credit_card',
+          gateway_id: 'gw_tran_001',
+          amount: 10000,
+          success: true,
+          status: 'captured',
+          installments: 3,
+          statement_descriptor: 'EDUZZ',
+          card: {
+            first_six_digits: '411111',
+            last_four_digits: '1111',
+            brand: 'Visa',
+            holder_name: 'Maria Silva',
+          },
+        },
+      },
+    ],
+    ...overrides,
+  };
+}

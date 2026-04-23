@@ -1,26 +1,32 @@
-import { PspType } from '../../../shared/domain/enums/pspType';
+import type { PspType } from '../../../shared/domain/enums/pspType';
 import type { TransactionEntity } from '../../../transactions/domain/entities';
 
-export type IdempotencyKey = {
+export type IdempotencyKeyInput = {
   psp: PspType;
   externalId: string;
 };
 
-export type IdempotencyDecision = 'inserted' | 'updated' | 'ignored_as_duplicate' | 'conflicted';
+export type IdempotencyKey = IdempotencyKeyInput;
 
-export type ExistingTransactionRecord = {
-  transaction: TransactionEntity;
-};
+export type IdempotencyDecision =
+  | 'inserted'
+  | 'updated'
+  | 'processed'
+  | 'conflicted'
+  | 'ignored_as_duplicate';
 
 export type RegisterIdempotencyDecisionInput = {
-  key: IdempotencyKey;
+  key: IdempotencyKeyInput;
   decision: IdempotencyDecision;
   syncRunId?: string;
   reason?: string;
 };
 
-export interface IdempotencyRepository {
-  findTransactionByKey(key: IdempotencyKey): Promise<ExistingTransactionRecord | null>;
+export type ExistingTransactionRecord = {
+  transaction: TransactionEntity;
+};
 
+export interface IdempotencyRepository {
+  findTransactionByKey(key: IdempotencyKeyInput): Promise<ExistingTransactionRecord | null>;
   registerDecision(input: RegisterIdempotencyDecisionInput): Promise<void>;
 }

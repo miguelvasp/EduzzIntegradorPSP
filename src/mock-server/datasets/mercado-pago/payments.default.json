@@ -5,11 +5,20 @@
     "status_detail": "accredited",
     "currency_id": "BRL",
     "transaction_amount": 150.5,
+    "net_received_amount": 145.0,
+    "total_paid_amount": 150.5,
     "installments": 3,
     "date_created": "2026-04-21T09:00:00.000Z",
     "date_last_updated": "2026-04-21T10:00:00.000Z",
     "date_approved": "2026-04-21T10:00:00.000Z",
     "payment_type_id": "credit_card",
+    "fee_details": [
+      {
+        "type": "mercadopago_fee",
+        "amount": 5.5,
+        "fee_payer": "collector"
+      }
+    ],
     "payer": {
       "id": "mp_payer_001",
       "email": "ana@example.com",
@@ -17,7 +26,7 @@
       "last_name": "Lima",
       "identification": {
         "type": "CPF",
-        "number": "masked"
+        "number": "12345678901"
       }
     },
     "card": {
@@ -33,12 +42,21 @@
     "status": "approved",
     "status_detail": "accredited",
     "currency_id": "BRL",
-    "transaction_amount": 300,
+    "transaction_amount": 300.0,
+    "net_received_amount": 291.0,
+    "total_paid_amount": 300.0,
     "installments": 1,
     "date_created": "2026-04-22T09:00:00.000Z",
     "date_last_updated": "2026-04-22T10:00:00.000Z",
     "date_approved": "2026-04-22T10:00:00.000Z",
     "payment_type_id": "credit_card",
+    "fee_details": [
+      {
+        "type": "mercadopago_fee",
+        "amount": 9.0,
+        "fee_payer": "collector"
+      }
+    ],
     "payer": {
       "id": "mp_payer_002",
       "email": "carlos@example.com",
@@ -46,7 +64,7 @@
       "last_name": "Pereira",
       "identification": {
         "type": "CPF",
-        "number": "masked"
+        "number": "98765432100"
       }
     },
     "card": {

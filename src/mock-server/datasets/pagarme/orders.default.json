@@ -13,6 +13,7 @@
       "id": "cus_pag_001",
       "name": "Maria Silva",
       "email": "maria@example.com",
+      "document": "12345678901",
       "document_type": "CPF",
       "type": "individual"
     },
@@ -61,6 +62,7 @@
       "id": "cus_pag_002",
       "name": "João Souza",
       "email": "joao@example.com",
+      "document": "98765432100",
       "document_type": "CPF",
       "type": "individual"
     },

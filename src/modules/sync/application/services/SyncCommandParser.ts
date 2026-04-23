@@ -13,7 +13,7 @@ export type ParsedSyncCommand = {
 
 export class SyncCommandParser {
   public parse(argv: string[]): ParsedSyncCommand {
-    const args = argv.slice(2);
+    const args = this.normalizeArgs(argv);
 
     const hasAll = args.includes('--all');
     const verbose = args.includes('--verbose');
@@ -62,6 +62,14 @@ export class SyncCommandParser {
       itemLimit,
       dryRun,
     };
+  }
+
+  private normalizeArgs(argv: string[]): string[] {
+    if (argv.length >= 3 && !argv[0].startsWith('--') && !argv[1].startsWith('--')) {
+      return argv.slice(2);
+    }
+
+    return argv;
   }
 
   private readOption(args: string[], optionName: string): string | undefined {

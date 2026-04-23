@@ -6,7 +6,9 @@ import { SyncWindowCalculator } from '../../domain/SyncWindowCalculator';
 import type { RunSyncResult, SyncExecutionContext } from '../dto/SyncExecutionContext';
 import type { SyncCheckpointRepository } from '../ports/SyncCheckpointRepository';
 import { SyncPageProcessor } from '../services/SyncPageProcessor';
+import { SyncPersistenceMapper } from '../services/SyncPersistenceMapper';
 import { SyncProgressTracker } from '../services/SyncProgressTracker';
+import { SyncRunLifecycleService } from '../services/SyncRunLifecycleService';
 
 export class RunIncrementalSyncUseCase {
   public constructor(
@@ -15,6 +17,7 @@ export class RunIncrementalSyncUseCase {
     private readonly syncWindowCalculator: SyncWindowCalculator,
     private readonly syncPageProcessor: SyncPageProcessor,
     private readonly progressTracker: SyncProgressTracker,
+    private readonly syncRunLifecycleService?: SyncRunLifecycleService,
   ) {}
 
   public async execute(context: SyncExecutionContext): Promise<RunSyncResult> {
@@ -23,53 +26,85 @@ export class RunIncrementalSyncUseCase {
       ? [context.targetPsp]
       : [PspType.PAGARME, PspType.MERCADO_PAGO];
 
+    const executionContext = this.syncRunLifecycleService
+      ? await this.syncRunLifecycleService.startRun(context)
+      : context;
+
     appLogger.info({
       eventType: 'incremental_sync_started',
       message: 'Incremental sync execution started',
       status: 'started',
       context: {
-        syncRunId: context.syncRunId,
-        correlationId: context.correlationId,
+        syncRunId: executionContext.syncRunId,
+        syncRunDbId: executionContext.syncRunDbId,
+        correlationId: executionContext.correlationId,
         targetPsps,
-        pageLimit: context.pageLimit,
-        itemLimit: context.itemLimit,
-        dryRun: context.dryRun,
+        pageLimit: executionContext.pageLimit,
+        itemLimit: executionContext.itemLimit,
+        dryRun: executionContext.dryRun,
       },
     });
 
-    for (const psp of targetPsps) {
-      await this.executePsp(context, psp);
+    try {
+      for (const psp of targetPsps) {
+        await this.executePsp(executionContext, psp);
+      }
+
+      const snapshot = this.progressTracker.getSnapshot();
+      const finishedAt = new Date();
+      const durationMs = Date.now() - startedAtMs;
+
+      if (this.syncRunLifecycleService) {
+        await this.syncRunLifecycleService.completeRun({
+          context: executionContext,
+          snapshot,
+          status: 'completed',
+        });
+      }
+
+      appLogger.info({
+        eventType: 'incremental_sync_completed',
+        message: 'Incremental sync execution completed',
+        status: 'completed',
+        durationMs,
+        context: {
+          syncRunId: executionContext.syncRunId,
+          syncRunDbId: executionContext.syncRunDbId,
+          correlationId: executionContext.correlationId,
+          targetPsps,
+          ...snapshot,
+        },
+      });
+
+      return {
+        syncRunId: executionContext.syncRunId,
+        syncRunDbId: executionContext.syncRunDbId,
+        correlationId: executionContext.correlationId,
+        startedAt: executionContext.startedAt,
+        finishedAt,
+        durationMs,
+        mode: executionContext.mode,
+        targetPsps,
+        pagesProcessed: snapshot.pagesProcessed,
+        itemsRead: snapshot.itemsRead,
+        status: 'completed',
+      };
+    } catch (error) {
+      const snapshot = this.progressTracker.getSnapshot();
+      const errorSummary =
+        error instanceof Error ? error.message : 'Unknown incremental sync execution failure';
+
+      if (this.syncRunLifecycleService) {
+        await this.syncRunLifecycleService.completeRun({
+          context: executionContext,
+          snapshot,
+          status: 'failed',
+          errorSummary,
+        });
+      }
+
+      throw error;
     }
-
-    const snapshot = this.progressTracker.getSnapshot();
-    const finishedAt = new Date();
-    const durationMs = Date.now() - startedAtMs;
-
-    appLogger.info({
-      eventType: 'incremental_sync_completed',
-      message: 'Incremental sync execution completed',
-      status: 'completed',
-      durationMs,
-      context: {
-        syncRunId: context.syncRunId,
-        correlationId: context.correlationId,
-        targetPsps,
-        ...snapshot,
-      },
-    });
-
-    return {
-      syncRunId: context.syncRunId,
-      correlationId: context.correlationId,
-      startedAt: context.startedAt,
-      finishedAt,
-      durationMs,
-      mode: context.mode,
-      targetPsps,
-      pagesProcessed: snapshot.pagesProcessed,
-      itemsRead: snapshot.itemsRead,
-      status: 'completed',
-    };
   }
 
   private async executePsp(context: SyncExecutionContext, psp: PspType): Promise<void> {
@@ -82,6 +117,9 @@ export class RunIncrementalSyncUseCase {
       checkpointLastSyncAt: checkpoint?.lastSyncAt,
     });
 
+    const sourceSnapshotBefore = this.progressTracker.getSnapshot();
+    let syncRunSourceId: number | undefined;
+
     this.progressTracker.startPsp(psp);
 
     appLogger.info({
@@ -90,6 +128,7 @@ export class RunIncrementalSyncUseCase {
       status: 'started',
       context: {
         syncRunId: context.syncRunId,
+        syncRunDbId: context.syncRunDbId,
         correlationId: context.correlationId,
         psp,
         checkpoint,
@@ -99,76 +138,165 @@ export class RunIncrementalSyncUseCase {
 
     let currentPage = checkpoint?.page ?? 1;
     let currentOffset = checkpoint?.offset ?? 0;
+    const currentCursor = checkpoint?.cursor;
     let processedPages = 0;
     const pageLimit = context.pageLimit ?? 1;
 
-    while (processedPages < pageLimit) {
-      const pageResult = await this.listPage(strategy, psp, {
-        page: currentPage,
-        offset: currentOffset,
-        itemLimit: context.itemLimit,
-      });
+    try {
+      if (this.syncRunLifecycleService) {
+        syncRunSourceId = await this.syncRunLifecycleService.startSource({
+          context,
+          psp,
+        });
+      }
 
-      this.progressTracker.recordPageProcessed();
+      while (processedPages < pageLimit) {
+        const pageResult = await this.listPage(strategy, psp, {
+          page: currentPage,
+          offset: currentOffset,
+          itemLimit: context.itemLimit,
+        });
 
-      await this.syncPageProcessor.processPage({
-        strategy,
-        items: pageResult.items,
-        context,
-        dryRun: context.dryRun,
-      });
+        const pageSnapshotBefore = this.progressTracker.getSnapshot();
+        let syncRunPageId: number | undefined;
 
-      processedPages += 1;
+        if (this.syncRunLifecycleService) {
+          syncRunPageId = await this.syncRunLifecycleService.startPage({
+            context,
+            syncRunSourceId,
+            pageNumber: psp === PspType.PAGARME ? currentPage : undefined,
+            pageSize: context.itemLimit ?? pageResult.items.length,
+            offsetValue: psp === PspType.MERCADO_PAGO ? currentOffset : undefined,
+            referenceValue: psp,
+          });
+        }
+
+        try {
+          this.progressTracker.recordPageProcessed();
+
+          await this.syncPageProcessor.processPage({
+            strategy,
+            items: pageResult.items,
+            context,
+            dryRun: context.dryRun,
+            page: psp === PspType.PAGARME ? currentPage : undefined,
+            offset: psp === PspType.MERCADO_PAGO ? currentOffset : undefined,
+            checkpointLastSyncAt: window.to,
+          });
+
+          processedPages += 1;
+
+          const pageSnapshotAfter = this.progressTracker.getSnapshot();
+
+          if (this.syncRunLifecycleService) {
+            await this.syncRunLifecycleService.completePage({
+              syncRunPageId,
+              status: 'completed',
+              counters: this.syncRunLifecycleService.calculatePageCounters(
+                pageSnapshotBefore,
+                pageSnapshotAfter,
+              ),
+            });
+          }
+
+          appLogger.info({
+            eventType: 'incremental_sync_page_processed',
+            message: 'Incremental sync page processed',
+            status: 'completed',
+            context: {
+              syncRunId: context.syncRunId,
+              syncRunDbId: context.syncRunDbId,
+              correlationId: context.correlationId,
+              psp,
+              page: currentPage,
+              offset: currentOffset,
+              itemCount: pageResult.items.length,
+              hasMore: pageResult.pagination.hasMore ?? false,
+            },
+          });
+
+          if (!pageResult.pagination.hasMore) {
+            break;
+          }
+
+          if (psp === PspType.PAGARME) {
+            currentPage += 1;
+          }
+
+          if (psp === PspType.MERCADO_PAGO) {
+            currentOffset += pageResult.pagination.limit ?? pageResult.items.length;
+          }
+        } catch (error) {
+          const pageSnapshotAfter = this.progressTracker.getSnapshot();
+
+          if (this.syncRunLifecycleService) {
+            await this.syncRunLifecycleService.completePage({
+              syncRunPageId,
+              status: 'failed',
+              counters: this.syncRunLifecycleService.calculatePageCounters(
+                pageSnapshotBefore,
+                pageSnapshotAfter,
+              ),
+            });
+          }
+
+          throw error;
+        }
+      }
+
+      await this.checkpointRepository.save(
+        SyncPersistenceMapper.toCheckpoint({
+          psp,
+          lastSyncAt: window.to,
+          page: psp === PspType.PAGARME ? currentPage : undefined,
+          offset: psp === PspType.MERCADO_PAGO ? currentOffset : undefined,
+          cursor: currentCursor,
+          updatedAt: new Date(),
+        }),
+      );
+
+      const sourceSnapshotAfter = this.progressTracker.getSnapshot();
+
+      if (this.syncRunLifecycleService) {
+        await this.syncRunLifecycleService.completeSource({
+          syncRunSourceId,
+          status: 'completed',
+          counters: this.syncRunLifecycleService.calculateSourceCounters(
+            sourceSnapshotBefore,
+            sourceSnapshotAfter,
+          ),
+        });
+      }
 
       appLogger.info({
-        eventType: 'incremental_sync_page_processed',
-        message: 'Incremental sync page processed',
+        eventType: 'incremental_sync_source_completed',
+        message: 'Incremental sync source completed',
         status: 'completed',
         context: {
           syncRunId: context.syncRunId,
+          syncRunDbId: context.syncRunDbId,
           correlationId: context.correlationId,
           psp,
-          page: currentPage,
-          offset: currentOffset,
-          itemCount: pageResult.items.length,
-          hasMore: pageResult.pagination.hasMore ?? false,
+          finalPage: currentPage,
+          finalOffset: currentOffset,
         },
       });
+    } catch (error) {
+      const sourceSnapshotAfter = this.progressTracker.getSnapshot();
 
-      if (!pageResult.pagination.hasMore) {
-        break;
+      if (this.syncRunLifecycleService) {
+        await this.syncRunLifecycleService.completeSource({
+          syncRunSourceId,
+          status: 'failed',
+          counters: this.syncRunLifecycleService.calculateSourceCounters(
+            sourceSnapshotBefore,
+            sourceSnapshotAfter,
+          ),
+        });
       }
 
-      if (psp === PspType.PAGARME) {
-        currentPage += 1;
-      }
-
-      if (psp === PspType.MERCADO_PAGO) {
-        currentOffset += pageResult.pagination.limit ?? pageResult.items.length;
-      }
+      throw error;
     }
-
-    await this.checkpointRepository.save({
-      psp,
-      lastSyncAt: window.to,
-      page: psp === PspType.PAGARME ? currentPage : undefined,
-      offset: psp === PspType.MERCADO_PAGO ? currentOffset : undefined,
-      cursor: checkpoint?.cursor,
-      updatedAt: new Date(),
-    });
-
-    appLogger.info({
-      eventType: 'incremental_sync_source_completed',
-      message: 'Incremental sync source completed',
-      status: 'completed',
-      context: {
-        syncRunId: context.syncRunId,
-        correlationId: context.correlationId,
-        psp,
-        finalPage: currentPage,
-        finalOffset: currentOffset,
-      },
-    });
   }
 
   private async listPage(

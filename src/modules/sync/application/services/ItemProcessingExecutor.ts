@@ -24,7 +24,7 @@ export class ItemProcessingExecutor {
         shouldContinue: true,
       };
     } catch (error) {
-      const result = this.itemFailureHandler.handle({
+      const result = await this.itemFailureHandler.handle({
         error,
         psp: params.psp,
         externalId: params.externalId,
