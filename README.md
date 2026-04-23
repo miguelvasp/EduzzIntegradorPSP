@@ -340,6 +340,19 @@ curl http://localhost:3000/transactions/1/payer
 
 ## 10. Como rodar os testes automatizados
 
+### Ordem correta para validar localmente no host
+
+Se você clonou o repositório e quer validar localmente fora do Docker, a ordem correta é:
+
+```bash
+npm install
+npm run build
+npm run lint
+npm test
+```
+
+Esse passo é importante porque `build`, `lint` e `test` dependem das dependências locais instaladas em `node_modules`.
+
 ### Build
 
 ```bash
@@ -357,6 +370,14 @@ npm run lint
 ```bash
 npm test
 ```
+
+### Observação importante
+
+No Docker Compose, os containers executam `npm install` internamente antes de subir a aplicação e o mock server.
+
+Mas, no host local, esse passo **não acontece automaticamente**.
+
+Por isso, se você clonar o repositório e tentar rodar `npm run build` sem antes executar `npm install`, o comando vai falhar porque o `tsc` ainda não estará disponível no ambiente local.
 
 ---
 
@@ -532,6 +553,10 @@ Arquivos mais relevantes:
 ### Roteiro da demonstração
 
 - `docs/demo.md`
+
+### Consultas e evidências no banco
+
+- `docs/database-query-guide.md`
 
 ---
 
