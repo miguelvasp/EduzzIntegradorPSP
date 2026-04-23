@@ -513,12 +513,7 @@ O `document` do pagador não é exposto em texto puro na API.
 - **idempotência de reimportação validada no fluxo principal**
 - **observabilidade operacional mínima**
 - **resiliência básica por configuração de retry/circuit breaker nas integrações**
-
-### Implementado com cuidado de escopo
-
-- **outbox / inbox**: estruturas e scripts existem no projeto, mas isso só deve ser vendido como fluxo ativo se estiver realmente operando no fluxo final demonstrado
-- **cache**: existe estrutura/configuração no projeto, mas só deve ser defendido como bônus entregue se estiver efetivamente ativo no fluxo validado
-
+ 
 A regra aqui é simples:
 não vender como “feito” o que só existe como preparação estrutural.
 
