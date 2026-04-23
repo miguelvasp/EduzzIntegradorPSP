@@ -4,8 +4,9 @@ import { InstallmentDetailHttpMapper } from '../mappers/InstallmentDetailHttpMap
 
 type GetInstallmentByIdRequest = FastifyRequest<{
   Params: {
-    transactionId: number | string;
-    installmentId: number | string;
+    id?: number | string;
+    transactionId?: number | string;
+    installmentId?: number | string;
   };
 }>;
 
@@ -17,6 +18,7 @@ export class GetInstallmentByIdController {
 
   public async handle(request: GetInstallmentByIdRequest, reply: FastifyReply): Promise<void> {
     const response = await this.getInstallmentByIdUseCase.execute({
+      id: request.params.id,
       transactionId: request.params.transactionId,
       installmentId: request.params.installmentId,
     });

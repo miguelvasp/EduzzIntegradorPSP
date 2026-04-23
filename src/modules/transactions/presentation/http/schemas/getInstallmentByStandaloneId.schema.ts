@@ -1,12 +1,12 @@
 import {
   errorResponseSchema,
-  transactionDetailResponseSchema,
+  transactionInstallmentResponseSchema,
 } from '../../../../../app/server/docs/openapi.schemas';
 
-export const getTransactionByIdSchema = {
+export const getInstallmentByStandaloneIdSchema = {
   tags: ['Transactions'],
-  summary: 'Obter detalhe da transação',
-  description: 'Retorna a transação com pagador seguro e resumo das parcelas.',
+  summary: 'Obter detalhe da parcela',
+  description: 'Retorna uma parcela específica pelo identificador único da parcela.',
   params: {
     type: 'object',
     required: ['id'],
@@ -16,7 +16,7 @@ export const getTransactionByIdSchema = {
     additionalProperties: false,
   },
   response: {
-    200: transactionDetailResponseSchema,
+    200: transactionInstallmentResponseSchema,
     400: errorResponseSchema,
     404: errorResponseSchema,
     500: errorResponseSchema,

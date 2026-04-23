@@ -2,25 +2,85 @@
 
 ## Objetivo
 
-Disponibilizar a consulta das parcelas associadas a uma transação consolidada por meio do endpoint:
+Documentar a consulta de parcelas na API.
+
+Hoje a aplicação suporta duas formas de acesso ao detalhe de parcela:
 
 - `GET /transactions/:id/installments`
+- `GET /transactions/:transactionId/installments/:installmentId`
+- `GET /installments/:id`
 
-## Entrada
+A rota nova `GET /installments/:id` foi adicionada para simplificar validação manual, melhorar a experiência no Swagger e alinhar a API ao que o desafio espera para consulta de parcela isolada.
 
-O endpoint recebe o identificador interno da transação no path.
+## Endpoints cobertos
 
-Regra:
+### 1. Listagem das parcelas da transação
 
-- `id` deve ser inteiro positivo
-- `id` inválido deve resultar em `400`
-- transação inexistente deve resultar em `404`
+```text
+GET /transactions/:id/installments
+```
 
-## Estrutura da resposta
+Retorna todas as parcelas da transação, ordenadas por número da parcela.
 
-A resposta contém a coleção das parcelas associadas à transação.
+### 2. Detalhe da parcela pela rota composta
 
-Cada item expõe:
+```text
+GET /transactions/:transactionId/installments/:installmentId
+```
+
+Retorna uma parcela específica validando ao mesmo tempo:
+
+- a transação;
+- a parcela.
+
+### 3. Detalhe da parcela pela rota alias
+
+```text
+GET /installments/:id
+```
+
+Retorna a parcela diretamente pelo identificador único da parcela.
+
+## Motivo da rota alias
+
+A rota composta continua útil para contexto transacional.
+Mas para teste manual e documentação navegável, ela é mais trabalhosa do que precisa.
+
+A rota alias resolve isso:
+
+- facilita uso no Swagger;
+- simplifica chamadas diretas;
+- reduz atrito de demonstração;
+- não quebra a rota já existente.
+
+A decisão foi **aditiva**, não de substituição.
+
+## Regras de entrada
+
+### `GET /transactions/:id/installments`
+
+- `id` deve ser inteiro positivo;
+- valor inválido deve retornar `400`;
+- transação inexistente deve retornar `404`.
+
+### `GET /transactions/:transactionId/installments/:installmentId`
+
+- `transactionId` deve ser inteiro positivo;
+- `installmentId` deve ser inteiro positivo;
+- valor inválido deve retornar `400`;
+- combinação inexistente deve retornar `404`.
+
+### `GET /installments/:id`
+
+- `id` deve ser inteiro positivo;
+- valor inválido deve retornar `400`;
+- parcela inexistente deve retornar `404`.
+
+## Estrutura de resposta
+
+### Listagem de parcelas
+
+A listagem retorna uma coleção com campos como:
 
 - `id`
 - `transactionId`
@@ -32,38 +92,54 @@ Cada item expõe:
 - `paidAt`
 - `updatedAt`
 
-## Ordenação
+### Detalhe da parcela
 
-A listagem deve ser retornada em ordem crescente de `installmentNumber`.
+O detalhe isolado retorna a mesma visão principal da parcela:
 
-Essa ordenação é obrigatória no contrato da v1.
+- `id`
+- `transactionId`
+- `installmentNumber`
+- `amount`
+- `fees`
+- `status`
+- `dueAt`
+- `paidAt`
+- `updatedAt`
 
-## Segurança
+## Persistência e leitura
 
-O endpoint não expõe:
+A leitura é feita sobre o estado persistido real no SQL Server.
 
-- payload bruto do PSP
-- dados internos de reconciliação
-- segredos operacionais
+Não existe montagem em memória para responder esses endpoints.
+O fluxo correto é:
 
-## Estrutura da implementação
+1. sync persiste transação e parcelas;
+2. consulta usa repositório SQL Server;
+3. presenter serializa a resposta HTTP.
 
-### ListTransactionInstallmentsUseCase
+## Reuso de fluxo
 
-Valida o identificador, consulta o repositório, trata não encontrado e garante ordenação por parcela.
+A rota alias não criou um caso de uso paralelo.
 
-### InstallmentQueryRepository
+O mesmo fluxo de detalhe foi reaproveitado com pequena adaptação de entrada:
 
-Responsável por ler as parcelas da transação no estado consolidado.
+- quando vier `transactionId + installmentId`, a busca considera os dois;
+- quando vier apenas `id`, a busca considera somente `installmentId`.
 
-### TransactionInstallmentHttpMapper
+Isso evita duplicação desnecessária.
 
-Serializa a resposta final do endpoint.
+## Contrato de erro
 
-### ListTransactionInstallmentsController
+Os cenários principais são:
 
-Recebe a requisição HTTP e devolve a coleção de parcelas.
+- `400` para parâmetro inválido;
+- `404` para recurso não encontrado;
+- `500` para falha interna segura.
 
-## Regra importante
+A resposta segue o contrato HTTP padronizado da aplicação.
 
-O endpoint deve refletir o estado consolidado do parcelamento persistido pela aplicação, não o payload bruto vindo do PSP.
+## Relação com o Swagger
+
+Esses endpoints estão documentados no Swagger em `/docs`.
+
+A rota `GET /installments/:id` foi adicionada justamente para deixar a documentação mais útil e mais fácil de validar manualmente.

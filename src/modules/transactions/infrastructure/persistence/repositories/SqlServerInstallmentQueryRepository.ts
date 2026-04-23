@@ -2,11 +2,13 @@ import {
   getSqlRequest,
   sql,
 } from '../../../../shared/infrastructure/persistence/SqlServerConnection';
-import type { GetInstallmentByIdQuery } from '../../../application/dto/GetInstallmentByIdQuery';
 import type { InstallmentDetailDto } from '../../../application/dto/InstallmentDetailDto';
 import type { ListTransactionInstallmentsQuery } from '../../../application/dto/ListTransactionInstallmentsQuery';
 import type { TransactionInstallmentDto } from '../../../application/dto/TransactionInstallmentDto';
-import type { InstallmentQueryRepository } from '../../../application/ports/InstallmentQueryRepository';
+import type {
+  InstallmentDetailQuery,
+  InstallmentQueryRepository,
+} from '../../../application/ports/InstallmentQueryRepository';
 
 type TransactionExistsRow = {
   exists_flag: number;
@@ -75,12 +77,17 @@ export class SqlServerInstallmentQueryRepository implements InstallmentQueryRepo
     }));
   }
 
-  public async getById(query: GetInstallmentByIdQuery): Promise<InstallmentDetailDto | null> {
+  public async getById(query: InstallmentDetailQuery): Promise<InstallmentDetailDto | null> {
     const request = await getSqlRequest();
 
-    request
-      .input('transactionId', sql.BigInt, query.transactionId)
-      .input('installmentId', sql.BigInt, query.installmentId);
+    request.input('installmentId', sql.BigInt, query.installmentId);
+
+    let whereClause = 'WHERE id = @installmentId';
+
+    if (typeof query.transactionId === 'number') {
+      request.input('transactionId', sql.BigInt, query.transactionId);
+      whereClause += ' AND transaction_id = @transactionId';
+    }
 
     const result = await request.query<InstallmentRow>(`
       SELECT TOP (1)
@@ -94,8 +101,7 @@ export class SqlServerInstallmentQueryRepository implements InstallmentQueryRepo
         paid_at,
         updated_at
       FROM dbo.installments
-      WHERE transaction_id = @transactionId
-        AND id = @installmentId
+      ${whereClause}
     `);
 
     const row = result.recordset[0];

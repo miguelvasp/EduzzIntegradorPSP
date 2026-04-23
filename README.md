@@ -14,6 +14,7 @@ Centralizar transações de cartão de crédito de múltiplos PSPs, garantindo i
 - SQL Server
 - Docker Compose
 - Vitest
+- Swagger / OpenAPI
 
 ## Estrutura do projeto
 
@@ -41,5 +42,6 @@ src/
     e2e/
 
 docs/
+  architecture/
   backlog/
 ```

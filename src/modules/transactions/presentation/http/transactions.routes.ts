@@ -21,6 +21,7 @@ import {
 } from './transactions.presenters';
 import {
   getInstallmentByIdSchema,
+  getInstallmentByStandaloneIdSchema,
   getTransactionByIdSchema,
   getTransactionPayerSchema,
   listTransactionInstallmentsSchema,
@@ -79,6 +80,12 @@ export async function registerTransactionRoutes(app: FastifyInstance): Promise<v
   app.get(
     '/transactions/:transactionId/installments/:installmentId',
     { schema: getInstallmentByIdSchema },
+    async (request, reply) => getInstallmentByIdController.handle(request as never, reply as never),
+  );
+
+  app.get(
+    '/installments/:id',
+    { schema: getInstallmentByStandaloneIdSchema },
     async (request, reply) => getInstallmentByIdController.handle(request as never, reply as never),
   );
 

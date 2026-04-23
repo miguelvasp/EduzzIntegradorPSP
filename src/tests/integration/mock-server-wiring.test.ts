@@ -13,18 +13,20 @@ describe('mock server wiring', () => {
       DOCS_ENABLED: true,
       DATABASE_HOST: 'db',
       DATABASE_PORT: 1433,
-      DATABASE_NAME: 'eduzz_integrador_psp',
+      DATABASE_NAME: 'EduzzMultiPsp',
       DATABASE_USER: 'sa',
-      DATABASE_PASSWORD: 'Your_strong_Password123',
+      DATABASE_PASSWORD: 'Eduzz@12345',
       DATABASE_CONNECTION_TIMEOUT_MS: 5000,
       DATABASE_POOL_MIN: 1,
       DATABASE_POOL_MAX: 10,
+      DATABASE_ENCRYPT: false,
+      DATABASE_TRUST_SERVER_CERTIFICATE: true,
       PSP_USE_MOCK_SERVER: true,
       PSP_TIMEOUT_MS: 10000,
       PSP_RETRY_ATTEMPTS: 2,
-      PAGARME_BASE_URL: 'http://mock-server:3334/core/v5',
+      PAGARME_BASE_URL: 'http://mock-server:3334',
       PAGARME_API_KEY: 'mock-api-key',
-      MERCADOPAGO_BASE_URL: 'http://mock-server:3334/v1',
+      MERCADOPAGO_BASE_URL: 'http://mock-server:3334',
       MERCADOPAGO_ACCESS_TOKEN: 'mock-access-token',
       SYNC_PAGE_SIZE: 20,
       SYNC_MAX_PAGE_SIZE: 100,
@@ -44,11 +46,14 @@ describe('mock server wiring', () => {
       OUTBOX_RETRY_LIMIT: 3,
     };
 
-    const config = createConfiguration(environment);
+    const appConfig = createConfiguration(environment);
 
-    expect(config.psp.useMockServer).toBe(true);
-    expect(config.psp.pagarme.baseUrl).toBe('http://mock-server:3334/core/v5');
-    expect(config.psp.mercadopago.baseUrl).toBe('http://mock-server:3334/v1');
+    expect(appConfig.psp.useMockServer).toBe(true);
+    expect(appConfig.psp.pagarme.baseUrl).toBe('http://mock-server:3334');
+    expect(appConfig.psp.mercadopago.baseUrl).toBe('http://mock-server:3334');
+    expect(appConfig.database.name).toBe('EduzzMultiPsp');
+    expect(appConfig.database.encrypt).toBe(false);
+    expect(appConfig.database.trustServerCertificate).toBe(true);
   });
 
   it('deve permitir alternar para PSP real apenas por configuração', () => {
@@ -61,18 +66,20 @@ describe('mock server wiring', () => {
       DOCS_ENABLED: true,
       DATABASE_HOST: 'localhost',
       DATABASE_PORT: 1433,
-      DATABASE_NAME: 'eduzz_integrador_psp',
+      DATABASE_NAME: 'EduzzMultiPsp',
       DATABASE_USER: 'sa',
-      DATABASE_PASSWORD: 'Your_strong_Password123',
+      DATABASE_PASSWORD: 'Eduzz@12345',
       DATABASE_CONNECTION_TIMEOUT_MS: 5000,
       DATABASE_POOL_MIN: 1,
       DATABASE_POOL_MAX: 10,
+      DATABASE_ENCRYPT: false,
+      DATABASE_TRUST_SERVER_CERTIFICATE: true,
       PSP_USE_MOCK_SERVER: false,
       PSP_TIMEOUT_MS: 10000,
       PSP_RETRY_ATTEMPTS: 2,
-      PAGARME_BASE_URL: 'https://api.pagar.me/core/v5',
+      PAGARME_BASE_URL: 'https://api.pagar.me',
       PAGARME_API_KEY: 'real-api-key',
-      MERCADOPAGO_BASE_URL: 'https://api.mercadopago.com/v1',
+      MERCADOPAGO_BASE_URL: 'https://api.mercadopago.com',
       MERCADOPAGO_ACCESS_TOKEN: 'real-access-token',
       SYNC_PAGE_SIZE: 20,
       SYNC_MAX_PAGE_SIZE: 100,
@@ -92,10 +99,13 @@ describe('mock server wiring', () => {
       OUTBOX_RETRY_LIMIT: 3,
     };
 
-    const config = createConfiguration(environment);
+    const appConfig = createConfiguration(environment);
 
-    expect(config.psp.useMockServer).toBe(false);
-    expect(config.psp.pagarme.baseUrl).toBe('https://api.pagar.me/core/v5');
-    expect(config.psp.mercadopago.baseUrl).toBe('https://api.mercadopago.com/v1');
+    expect(appConfig.psp.useMockServer).toBe(false);
+    expect(appConfig.psp.pagarme.baseUrl).toBe('https://api.pagar.me');
+    expect(appConfig.psp.mercadopago.baseUrl).toBe('https://api.mercadopago.com');
+    expect(appConfig.database.name).toBe('EduzzMultiPsp');
+    expect(appConfig.database.encrypt).toBe(false);
+    expect(appConfig.database.trustServerCertificate).toBe(true);
   });
 });
