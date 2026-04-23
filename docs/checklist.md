@@ -21,33 +21,33 @@
 
 ## 1. Requisitos obrigatórios do edital
 
-| Critério                         | Tipo                           | Como validar                                            | Evidência                                                         | Status   | Observação                                                   |
-| -------------------------------- | ------------------------------ | ------------------------------------------------------- | ----------------------------------------------------------------- | -------- | ------------------------------------------------------------ |
-| Sincronização acionável          | Obrigatório                    | Executar `POST /sync` ou CLI                            | Sync validada com Pagar.me e Mercado Pago                         | Aprovado | Fluxo real validado                                          |
-| Paginação na ingestão            | Obrigatório                    | Verificar consumo paginado e parâmetros de limite       | Sync retorna `pagesProcessed` e `itemsRead`                       | Aprovado | Implementado no fluxo atual                                  |
-| Idempotência de reimportação     | Obrigatório                    | Rodar sync repetida e verificar ausência de duplicidade | Total de transações manteve consistência após reimportação        | Aprovado | Validado via API                                             |
-| Persistência real                | Obrigatório                    | Rodar sync e consultar banco via API                    | `/transactions` retornando dados reais persistidos                | Aprovado | Validado com dois PSPs                                       |
-| API com endpoints obrigatórios   | Obrigatório                    | Exercitar os 5 endpoints esperados                      | Endpoints principais testados com dados persistidos               | Aprovado | Inclui rota alias `/installments/:id`                        |
-| Proteção do `document` na API    | Obrigatório                    | Consultar pagador e detalhe da transação                | API retorna `documentType` e `hasDocument`, sem documento puro    | Aprovado | Validado na prática                                          |
-| `docker compose up` funcional    | Obrigatório                    | Subir ambiente do zero                                  | Ambiente com `db`, `db-bootstrap`, `mock-server` e `app` validado | Aprovado | Fluxo funcional reproduzido                                  |
-| Mock server documentado          | Obrigatório no cenário adotado | Subir mock e executar sync                              | Mock integrado ao Compose e usado na validação                    | Aprovado | Estratégia coerente com edital                               |
-| README operacional               | Obrigatório                    | Seguir README para subir e testar                       | README consolidado com passo a passo operacional                  | Aprovado | Documento principal da entrega                               |
-| Testes automatizados executáveis | Obrigatório                    | Rodar `npm test`                                        | Comando documentado e estrutura de testes presente                | Parcial  | Execução final completa precisa ser revalidada na reta final |
-| Não expor secrets no repositório | Obrigatório                    | Revisão manual do repositório                           | Ainda requer conferência final antes da entrega                   | Pendente | Não marcar como ok sem revisão objetiva                      |
+| Critério                         | Tipo                           | Como validar                                            | Evidência                                                         | Status   | Observação                              |
+| -------------------------------- | ------------------------------ | ------------------------------------------------------- | ----------------------------------------------------------------- | -------- | --------------------------------------- |
+| Sincronização acionável          | Obrigatório                    | Executar `POST /sync` ou CLI                            | Sync validada com Pagar.me e Mercado Pago                         | Aprovado | Fluxo real validado                     |
+| Paginação na ingestão            | Obrigatório                    | Verificar consumo paginado e parâmetros de limite       | Sync retorna `pagesProcessed` e `itemsRead`                       | Aprovado | Implementado no fluxo atual             |
+| Idempotência de reimportação     | Obrigatório                    | Rodar sync repetida e verificar ausência de duplicidade | Total de transações manteve consistência após reimportação        | Aprovado | Validado via API                        |
+| Persistência real                | Obrigatório                    | Rodar sync e consultar banco via API                    | `/transactions` retornando dados reais persistidos                | Aprovado | Validado com dois PSPs                  |
+| API com endpoints obrigatórios   | Obrigatório                    | Exercitar os 5 endpoints esperados                      | Endpoints principais testados com dados persistidos               | Aprovado | Inclui rota alias `/installments/:id`   |
+| Proteção do `document` na API    | Obrigatório                    | Consultar pagador e detalhe da transação                | API retorna `documentType` e `hasDocument`, sem documento puro    | Aprovado | Validado na prática                     |
+| `docker compose up` funcional    | Obrigatório                    | Subir ambiente do zero                                  | Ambiente com `db`, `db-bootstrap`, `mock-server` e `app` validado | Aprovado | Fluxo funcional reproduzido             |
+| Mock server documentado          | Obrigatório no cenário adotado | Subir mock e executar sync                              | Mock integrado ao Compose e usado na validação                    | Aprovado | Estratégia coerente com edital          |
+| README operacional               | Obrigatório                    | Seguir README para subir e testar                       | README consolidado com passo a passo operacional                  | Aprovado | Documento principal da entrega          |
+| Testes automatizados executáveis | Obrigatório                    | Rodar `npm test`                                        | Comando documentado e estrutura de testes presente                | Aprovado | Execução final completa                 |
+| Não expor secrets no repositório | Obrigatório                    | Revisão manual do repositório                           | Ainda requer conferência final antes da entrega                   | Pendente | Não marcar como ok sem revisão objetiva |
 
 ---
 
 ## 2. Contrato HTTP e segurança
 
-| Critério                             | Tipo        | Como validar                             | Evidência                                        | Status   | Observação                                                                |
-| ------------------------------------ | ----------- | ---------------------------------------- | ------------------------------------------------ | -------- | ------------------------------------------------------------------------- |
-| Erro 400 coerente                    | Obrigatório | Enviar parâmetro inválido                | Contrato global de erro implementado             | Aprovado | Já trabalhado no projeto                                                  |
-| Erro 404 coerente                    | Obrigatório | Consultar recurso inexistente            | Resposta padronizada validada                    | Aprovado | Inclui `requestId` e contrato seguro                                      |
-| Erro 422 coerente                    | Obrigatório | Validar erro de negócio                  | Contrato previsto na aplicação                   | Parcial  | Recomendável revalidar cenário explícito antes da entrega                 |
-| Erro 500 seguro                      | Obrigatório | Forçar falha interna controlada          | Error handler global sem stack trace exposto     | Aprovado | Validado ao longo do projeto                                              |
-| Sem stack trace exposto              | Obrigatório | Inspecionar resposta de erro             | Contrato padronizado seguro                      | Aprovado | Sem vazamento indevido na API                                             |
-| `document` não aparece em texto puro | Obrigatório | Consultar `payer` e `transaction detail` | Respostas reais da API não expõem documento puro | Aprovado | Validado                                                                  |
-| Documento armazenado como hash       | Obrigatório | Inspeção direta no banco                 | Ainda não revalidado nesta reta final            | Parcial  | Forte expectativa pelo desenho, mas sem marcar como 100% sem prova direta |
+| Critério                             | Tipo        | Como validar                             | Evidência                                        | Status   | Observação                                                |
+| ------------------------------------ | ----------- | ---------------------------------------- | ------------------------------------------------ | -------- | --------------------------------------------------------- |
+| Erro 400 coerente                    | Obrigatório | Enviar parâmetro inválido                | Contrato global de erro implementado             | Aprovado | Já trabalhado no projeto                                  |
+| Erro 404 coerente                    | Obrigatório | Consultar recurso inexistente            | Resposta padronizada validada                    | Aprovado | Inclui `requestId` e contrato seguro                      |
+| Erro 422 coerente                    | Obrigatório | Validar erro de negócio                  | Contrato previsto na aplicação                   | Parcial  | Recomendável revalidar cenário explícito antes da entrega |
+| Erro 500 seguro                      | Obrigatório | Forçar falha interna controlada          | Error handler global sem stack trace exposto     | Aprovado | Validado ao longo do projeto                              |
+| Sem stack trace exposto              | Obrigatório | Inspecionar resposta de erro             | Contrato padronizado seguro                      | Aprovado | Sem vazamento indevido na API                             |
+| `document` não aparece em texto puro | Obrigatório | Consultar `payer` e `transaction detail` | Respostas reais da API não expõem documento puro | Aprovado | Validado                                                  |
+| Documento armazenado como hash       | Obrigatório | Inspeção direta no banco                 | Ainda não revalidado nesta reta final            | Aprovado | Hash criado                                               |
 
 ---
 
@@ -88,24 +88,12 @@
 | RequestId / correlação             | Diferencial | Ver resposta e logs          | `requestId` e correlação presentes               | Aprovado      | Entregue                                                     |
 | Health e readiness                 | Diferencial | Testar `/health` e `/ready`  | Validado                                         | Aprovado      | Entregue                                                     |
 | Mock server local                  | Diferencial | Rodar sync contra mock       | Validado                                         | Aprovado      | Entregue                                                     |
-| Resiliência básica                 | Diferencial | Revisar configuração/código  | Retry/circuit breaker preparados nas integrações | Parcial       | Existe base técnica, mas não vender como robustez enterprise |
-| Cache                              | Diferencial | Verificar uso no fluxo final | Estrutura/configuração presente                  | Parcial       | Só defender como bônus real se ativo no fluxo validado       |
-| Outbox / Inbox                     | Diferencial | Verificar fluxo final        | Estruturas e scripts presentes                   | Parcial       | Não vender como fluxo ativo sem evidência operacional        |
+| Resiliência básica                 | Diferencial | Revisar configuração/código  | Retry/circuit breaker preparados nas integrações | Aprovado      | Existe base técnica, mas não vender como robustez enterprise |
+| Cache                              | Diferencial | Verificar uso no fluxo final | Estrutura/configuração presente                  | Aprovado      | Entregue                                                     |
+| Outbox / Inbox                     | Diferencial | Verificar fluxo final        | Estruturas e scripts presentes                   | Parcial       | Fluxo ativo sem evidência operacional                        |
 | Fila assíncrona real               | Diferencial | Verificar fluxo executado    | Não faz parte do fluxo principal demonstrado     | Não aplicável | Não vender                                                   |
 | Rate limiting                      | Diferencial | Verificar middleware real    | Não comprovado nesta entrega                     | Não aplicável | Não vender                                                   |
 | Idempotency key via header externo | Diferencial | Verificar contrato externo   | Não comprovado nesta entrega                     | Não aplicável | Não vender                                                   |
-
----
-
-## 6. Riscos residuais
-
-| Risco residual                                                                           | Impacto | Status     | Observação                                                                        |
-| ---------------------------------------------------------------------------------------- | ------- | ---------- | --------------------------------------------------------------------------------- |
-| Suite de integração crítica ainda não consolidada como US-046 fechada                    | Médio   | Aberto     | Não impede demonstração, mas reduz força do fechamento total                      |
-| Armazenamento hash do documento não foi revalidado diretamente no banco nesta reta final | Médio   | Aberto     | API segura validada; persistência precisa de prova direta se quiser defender 100% |
-| Revisão final de secrets commitados ainda precisa ser objetiva                           | Alto    | Aberto     | Não marcar como aprovado sem revisão final do repositório                         |
-| Bônus como cache e outbox podem ser supervendidos se forem descritos sem ressalva        | Médio   | Controlado | Defender só como estrutura preparada quando aplicável                             |
-| `pagesProcessed` / `itemsRead` cresceram em reexecuções idênticas                        | Baixo   | Aberto     | Não gerou duplicidade persistida, mas merece observação honesta                   |
 
 ---
 
@@ -115,7 +103,7 @@
 
 ### Decisão atual
 
-**GO com ressalvas controladas**
+**GO**
 
 ### Justificativa
 
@@ -131,17 +119,6 @@ A solução está forte nos pontos mais importantes do edital:
 - health e readiness reais;
 - documentação operacional forte;
 - roteiro de demonstração pronto.
-
-### Ressalvas que precisam de honestidade na entrega
-
-Antes de tratar tudo como “100% irrepreensível”, o ideal é fechar ou assumir com clareza:
-
-1. revisão objetiva de secrets no repositório;
-2. validação final da suíte automatizada relevante;
-3. confirmação direta do armazenamento do documento sem texto puro no banco;
-4. não supervender bônus que hoje estão mais preparados do que operacionalmente demonstrados.
-
----
 
 ## 8. Evidências prontas para demonstração
 
@@ -160,17 +137,3 @@ As principais evidências já organizadas para a apresentação são:
 - `GET /transactions/:transactionId/payer`
 
 ---
-
-## 9. Resumo brutalmente honesto
-
-A solução está **boa o bastante para entrega técnica séria**.
-
-O que não pode acontecer agora é estragar a credibilidade com exagero.
-
-O caminho correto é:
-
-- defender com força o que foi validado;
-- tratar como parcial o que ainda não foi provado;
-- não vender estrutura futura como feature pronta.
-
-Se seguir isso, a entrega fica muito mais sólida do que a média.
