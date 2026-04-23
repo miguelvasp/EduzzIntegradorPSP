@@ -3,6 +3,8 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { registerSyncRoutes } from '../../modules/sync/presentation/http/sync.routes';
 import { registerTransactionRoutes } from '../../modules/transactions/presentation/http/transactions.routes';
 import { registerSwagger } from './docs/registerSwagger';
+import { readinessSchema } from './health/readiness.schemas';
+import { ReadinessService } from './health/readiness.service';
 import { registerErrorLogging } from './http/registerErrorLogging';
 import { registerRequestLogging } from './http/registerRequestLogging';
 
@@ -11,6 +13,8 @@ export function createServer(): FastifyInstance {
     logger: false,
     disableRequestLogging: true,
   });
+
+  const readinessService = new ReadinessService();
 
   void app.register(cors, {
     origin: true,
@@ -28,6 +32,7 @@ export function createServer(): FastifyInstance {
         schema: {
           tags: ['Health'],
           summary: 'Health check da aplicação',
+          description: 'Responde apenas se o processo está vivo.',
           response: {
             200: {
               type: 'object',
@@ -46,6 +51,13 @@ export function createServer(): FastifyInstance {
         };
       },
     );
+
+    instance.get('/ready', { schema: readinessSchema }, async (request, reply) => {
+      const readiness = await readinessService.check();
+      const statusCode = readiness.status === 'ready' ? 200 : 503;
+
+      return reply.status(statusCode).send(readiness);
+    });
 
     await registerSyncRoutes(instance);
     await registerTransactionRoutes(instance);

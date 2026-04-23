@@ -38,15 +38,13 @@ export const runSyncSchema = {
   tags: ['Sync'],
   summary: 'Executar sincronização padrão',
   description:
-    'Executa a sincronização do PSP informado. Use dryRun=false para persistir no banco.',
+    'Executa a sincronização do PSP informado. Se o campo psp não for enviado, executa para todos os PSPs suportados. Use dryRun=false para persistir no banco.',
   body: {
     type: 'object',
-    required: ['psp'],
     properties: {
       psp: {
         type: 'string',
         enum: ['pagarme', 'mercadopago', 'mercado_pago'],
-        default: 'pagarme',
       },
       pageLimit: { type: 'integer', minimum: 1, default: 1 },
       itemLimit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
@@ -67,15 +65,13 @@ export const runIncrementalSyncSchema = {
   tags: ['Sync'],
   summary: 'Executar sincronização incremental',
   description:
-    'Executa a sincronização incremental do PSP informado. Use dryRun=false para persistir no banco.',
+    'Executa a sincronização incremental do PSP informado. Se o campo psp não for enviado, executa para todos os PSPs suportados. Use dryRun=false para persistir no banco.',
   body: {
     type: 'object',
-    required: ['psp'],
     properties: {
       psp: {
         type: 'string',
         enum: ['pagarme', 'mercadopago', 'mercado_pago'],
-        default: 'pagarme',
       },
       pageLimit: { type: 'integer', minimum: 1, default: 1 },
       itemLimit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },

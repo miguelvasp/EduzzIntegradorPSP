@@ -1,6 +1,5 @@
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createServer } from '../../app/server/createServer';
 import {
   DomainError,
   InternalError,
@@ -9,12 +8,46 @@ import {
 } from '../../modules/shared/application/errors';
 import { ErrorCode } from '../../modules/shared/domain/error-codes/errorCode';
 
+const buildContainerMock = vi.fn();
+
+vi.mock('../../app/container', () => ({
+  buildContainer: buildContainerMock,
+}));
+
+vi.mock('../../app/container/index', () => ({
+  buildContainer: buildContainerMock,
+}));
+
+function createContainerMock() {
+  return {
+    persistence: {
+      transactionQueryRepository: {} as never,
+      installmentQueryRepository: {} as never,
+      payerQueryRepository: {} as never,
+    },
+    syncExecutionFactory: {
+      create: vi.fn(),
+    },
+    runSyncUseCase: {
+      execute: vi.fn(),
+    },
+    runIncrementalSyncUseCase: {
+      execute: vi.fn(),
+    },
+  };
+}
+
 describe('error handler integration', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.clearAllMocks();
+    buildContainerMock.mockReset();
   });
 
   it('deve retornar 400 para ValidationError', async () => {
+    buildContainerMock.mockResolvedValue(createContainerMock());
+
+    const { createServer } = await import('../../app/server/createServer.js');
     const app = createServer();
 
     app.get('/__test/validation', async () => {
@@ -46,6 +79,9 @@ describe('error handler integration', () => {
   });
 
   it('deve retornar 404 para NotFoundError', async () => {
+    buildContainerMock.mockResolvedValue(createContainerMock());
+
+    const { createServer } = await import('../../app/server/createServer.js');
     const app = createServer();
 
     app.get('/__test/not-found', async () => {
@@ -71,6 +107,9 @@ describe('error handler integration', () => {
   });
 
   it('deve retornar 422 para DomainError', async () => {
+    buildContainerMock.mockResolvedValue(createContainerMock());
+
+    const { createServer } = await import('../../app/server/createServer.js');
     const app = createServer();
 
     app.get('/__test/domain', async () => {
@@ -97,6 +136,9 @@ describe('error handler integration', () => {
   });
 
   it('deve retornar 500 seguro para erro inesperado', async () => {
+    buildContainerMock.mockResolvedValue(createContainerMock());
+
+    const { createServer } = await import('../../app/server/createServer.js');
     const app = createServer();
 
     app.get('/__test/unexpected', async () => {
@@ -122,6 +164,9 @@ describe('error handler integration', () => {
   });
 
   it('nao deve vazar dado sensivel em details expostos', async () => {
+    buildContainerMock.mockResolvedValue(createContainerMock());
+
+    const { createServer } = await import('../../app/server/createServer.js');
     const app = createServer();
 
     app.get('/__test/sensitive-details', async () => {
@@ -152,6 +197,9 @@ describe('error handler integration', () => {
   });
 
   it('deve respeitar requestId e correlationId enviados no header', async () => {
+    buildContainerMock.mockResolvedValue(createContainerMock());
+
+    const { createServer } = await import('../../app/server/createServer.js');
     const app = createServer();
 
     app.get('/__test/request-id', async () => {

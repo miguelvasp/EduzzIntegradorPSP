@@ -10,6 +10,52 @@ export const healthResponseSchema = {
   additionalProperties: false,
 };
 
+export const readinessChecksSchema = {
+  type: 'object',
+  required: ['app', 'database'],
+  properties: {
+    app: {
+      type: 'string',
+      enum: ['ok', 'failed'],
+      example: 'ok',
+    },
+    database: {
+      type: 'string',
+      enum: ['ok', 'failed'],
+      example: 'ok',
+    },
+  },
+  additionalProperties: false,
+};
+
+export const readinessReadyResponseSchema = {
+  type: 'object',
+  required: ['status', 'checks'],
+  properties: {
+    status: {
+      type: 'string',
+      enum: ['ready'],
+      example: 'ready',
+    },
+    checks: readinessChecksSchema,
+  },
+  additionalProperties: false,
+};
+
+export const readinessNotReadyResponseSchema = {
+  type: 'object',
+  required: ['status', 'checks'],
+  properties: {
+    status: {
+      type: 'string',
+      enum: ['not_ready'],
+      example: 'not_ready',
+    },
+    checks: readinessChecksSchema,
+  },
+  additionalProperties: false,
+};
+
 export const errorResponseSchema = {
   type: 'object',
   required: ['status', 'error', 'code', 'message', 'path', 'requestId', 'timestamp'],
@@ -223,12 +269,15 @@ export const transactionDetailResponseSchema = {
 };
 
 export const openApiTags = [
-  { name: 'Health', description: 'Verificação básica da aplicação' },
+  { name: 'Health', description: 'Verificação de liveness e readiness da aplicação' },
   { name: 'Transactions', description: 'Consulta de transações, parcelas e pagador' },
 ];
 
 export const openApiComponentSchemas = {
   HealthResponse: healthResponseSchema,
+  ReadinessChecks: readinessChecksSchema,
+  ReadinessReadyResponse: readinessReadyResponseSchema,
+  ReadinessNotReadyResponse: readinessNotReadyResponseSchema,
   ErrorResponse: errorResponseSchema,
   TransactionListItemResponse: transactionListItemResponseSchema,
   PaginatedTransactionsResponse: paginatedTransactionsResponseSchema,

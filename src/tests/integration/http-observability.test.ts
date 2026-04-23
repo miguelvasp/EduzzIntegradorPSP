@@ -1,14 +1,47 @@
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createServer } from '../../app/server/createServer';
 import { appLogger } from '../../app/server/logging';
+
+const buildContainerMock = vi.fn();
+
+vi.mock('../../app/container', () => ({
+  buildContainer: buildContainerMock,
+}));
+
+vi.mock('../../app/container/index', () => ({
+  buildContainer: buildContainerMock,
+}));
+
+function createContainerMock() {
+  return {
+    persistence: {
+      transactionQueryRepository: {} as never,
+      installmentQueryRepository: {} as never,
+      payerQueryRepository: {} as never,
+    },
+    syncExecutionFactory: {
+      create: vi.fn(),
+    },
+    runSyncUseCase: {
+      execute: vi.fn(),
+    },
+    runIncrementalSyncUseCase: {
+      execute: vi.fn(),
+    },
+  };
+}
 
 describe('http observability integration', () => {
   afterEach(async () => {
     vi.restoreAllMocks();
+    vi.clearAllMocks();
+    buildContainerMock.mockReset();
   });
 
   it('deve logar inicio e fim da request e devolver x-request-id', async () => {
+    buildContainerMock.mockResolvedValue(createContainerMock());
+
+    const { createServer } = await import('../../app/server/createServer.js');
     const app = createServer();
     const infoSpy = vi.spyOn(appLogger, 'info').mockImplementation(() => undefined);
 
