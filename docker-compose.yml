@@ -4,7 +4,7 @@ services:
     container_name: eduzz-integrador-db
     environment:
       ACCEPT_EULA: 'Y'
-      MSSQL_SA_PASSWORD: 'Eduzz@12345'
+      MSSQL_SA_PASSWORD: '${DATABASE_PASSWORD:-ChangeMe!123}'
       MSSQL_PID: 'Developer'
     ports:
       - '1433:1433'
@@ -14,7 +14,7 @@ services:
       test:
         [
           'CMD-SHELL',
-          "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'Eduzz@12345' -Q 'SELECT 1' || exit 1",
+          "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P '${DATABASE_PASSWORD:-ChangeMe!123}' -Q 'SELECT 1' || exit 1",
         ]
       interval: 15s
       timeout: 5s
@@ -30,7 +30,7 @@ services:
     entrypoint: ['/bin/sh', '-c']
     command:
       - >
-        /opt/mssql-tools18/bin/sqlcmd -C -S db -U sa -P 'Eduzz@12345'
+        /opt/mssql-tools18/bin/sqlcmd -C -S db -U sa -P '${DATABASE_PASSWORD:-ChangeMe!123}'
         -Q "IF DB_ID(N'EduzzMultiPsp') IS NULL BEGIN CREATE DATABASE EduzzMultiPsp; END;"
 
   mock-server:
@@ -75,7 +75,7 @@ services:
       DATABASE_PORT: 1433
       DATABASE_NAME: EduzzMultiPsp
       DATABASE_USER: sa
-      DATABASE_PASSWORD: Eduzz@12345
+      DATABASE_PASSWORD: '${DATABASE_PASSWORD:-ChangeMe!123}'
       DATABASE_CONNECTION_TIMEOUT_MS: 5000
       DATABASE_POOL_MIN: 1
       DATABASE_POOL_MAX: 10
@@ -87,17 +87,17 @@ services:
       PSP_RETRY_ATTEMPTS: 2
 
       PAGARME_BASE_URL: http://mock-server:3334
-      PAGARME_API_KEY: mock-api-key
+      PAGARME_API_KEY: '${PAGARME_API_KEY:-mock-api-key}'
 
       MERCADOPAGO_BASE_URL: http://mock-server:3334
-      MERCADOPAGO_ACCESS_TOKEN: mock-access-token
+      MERCADOPAGO_ACCESS_TOKEN: '${MERCADOPAGO_ACCESS_TOKEN:-mock-access-token}'
 
       SYNC_PAGE_SIZE: 20
       SYNC_MAX_PAGE_SIZE: 100
       SYNC_INCREMENTAL_WINDOW_MINUTES: 60
       SYNC_SAFETY_OVERLAP_MINUTES: 5
 
-      SECURITY_HASH_SALT: mock-salt
+      SECURITY_HASH_SALT: '${SECURITY_HASH_SALT:-change-me-salt}'
       SECURITY_MASK_SENSITIVE_DATA: 'true'
       SECURITY_REDACT_SECRETS_IN_LOGS: 'true'
 

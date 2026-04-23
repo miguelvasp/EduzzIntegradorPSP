@@ -100,6 +100,7 @@ src/
     config/
     container/
     server/
+    workers/
 
   modules/
     psp/
@@ -107,6 +108,7 @@ src/
     transactions/
     reconciliation/
     outbox/
+    risk/
     shared/
 
 docs/
@@ -156,6 +158,13 @@ Esse comando sobe:
 - `db-bootstrap` — criação inicial do banco
 - `mock-server` — mock local dos PSPs
 - `app` — API principal
+
+Esse comando sobe o ambiente mesmo sem arquivo `.env`, porque o `docker-compose.yml` usa defaults seguros de demo.
+
+Se você quiser customizar variáveis ou rodar fora do Docker:
+
+1. copie `.env.example` para `.env`
+2. ajuste os valores necessários
 
 ### Portas principais
 
@@ -232,9 +241,21 @@ curl -X POST http://localhost:3000/sync -H "Content-Type: application/json" -d "
 curl -X POST http://localhost:3000/sync -H "Content-Type: application/json" -d "{\"psp\":\"mercadopago\"}"
 ```
 
-### Atenção no Swagger
+### Sync incremental
 
-Se a sync for executada com:
+```bash
+curl -X POST http://localhost:3000/sync/incremental -H "Content-Type: application/json" -d "{\"psp\":\"pagarme\"}"
+```
+
+ou
+
+```bash
+curl -X POST http://localhost:3000/sync/incremental -H "Content-Type: application/json" -d "{\"psp\":\"mercadopago\"}"
+```
+
+### Atenção importante sobre o Swagger
+
+Se você usar o Swagger para chamar `/sync` com:
 
 ```json
 {
@@ -242,7 +263,12 @@ Se a sync for executada com:
 }
 ```
 
-ela não persiste no banco.
+a execução será de **simulação**, sem persistência.
+
+Para gravar de verdade no banco:
+
+- use `dryRun: false`
+- ou simplesmente não envie esse campo
 
 ---
 
@@ -270,6 +296,12 @@ curl http://localhost:3000/transactions/1/installments
 
 ```bash
 curl http://localhost:3000/installments/1
+```
+
+### Detalhe da parcela pela rota composta
+
+```bash
+curl http://localhost:3000/transactions/1/installments/1
 ```
 
 ### Pagador da transação
@@ -320,9 +352,15 @@ docker compose down -v
 
 Arquivos de referência:
 
-- `.env.example`
-- `.env.mock.example`
-- `.env.real.example`
+- `.env.example` — base para execução local fora do Docker
+- `.env.mock.example` — referência para cenário Docker/mock
+- `.env.real.example` — referência para cenário com PSP real
+
+Observação importante:
+
+- para subir com Docker Compose, o projeto já possui defaults seguros de demo;
+- para execução local fora do Docker, copie `.env.example` para `.env`;
+- não versionar `.env` real com credenciais próprias.
 
 ### Aplicação
 
@@ -356,6 +394,28 @@ Arquivos de referência:
 - `MERCADOPAGO_BASE_URL`
 - `MERCADOPAGO_ACCESS_TOKEN`
 
+Os valores presentes nos arquivos `*.example` são apenas exemplos seguros de demo ou placeholders.
+Eles não representam credenciais reais de produção.
+
+### Sync
+
+- `SYNC_PAGE_SIZE`
+- `SYNC_MAX_PAGE_SIZE`
+- `SYNC_INCREMENTAL_WINDOW_MINUTES`
+- `SYNC_SAFETY_OVERLAP_MINUTES`
+
+### Segurança
+
+- `SECURITY_HASH_SALT`
+- `SECURITY_MASK_SENSITIVE_DATA`
+- `SECURITY_REDACT_SECRETS_IN_LOGS`
+
+### Observabilidade
+
+- `OBS_STRUCTURED_LOGGING`
+- `OBS_METRICS_ENABLED`
+- `OBS_REQUEST_CORRELATION_ENABLED`
+
 ---
 
 ## 13. Decisões arquiteturais principais
@@ -378,6 +438,10 @@ A sincronização pode ser executada por:
 
 - endpoint HTTP
 - CLI
+
+### API de consulta separada do fluxo de integração
+
+Os adapters PSP tratam integração externa; a API consulta o estado persistido.
 
 ### Segurança do pagador
 
@@ -402,8 +466,14 @@ O `document` do pagador não é exposto em texto puro na API.
 - **idempotência de reimportação validada no fluxo principal**
 - **observabilidade operacional mínima**
 - **resiliência básica por configuração de retry/circuit breaker nas integrações**
-- **outbox / inbox**
-- **cache**
+
+### Implementado com cuidado de escopo
+
+- **outbox / inbox**: estruturas e scripts existem no projeto, mas isso só deve ser vendido como fluxo ativo se estiver realmente operando no fluxo final demonstrado
+- **cache**: existe estrutura/configuração no projeto, mas só deve ser defendido como bônus entregue se estiver efetivamente ativo no fluxo validado
+
+A regra aqui é simples:
+não vender como “feito” o que só existe como preparação estrutural.
 
 ---
 
@@ -416,6 +486,14 @@ O `document` do pagador não é exposto em texto puro na API.
 ### Arquitetura
 
 - `docs/architecture`
+
+Arquivos mais relevantes:
+
+- `docs/architecture/overview.md`
+- `docs/architecture/modules.md`
+- `docs/architecture/docker-compose-environment.md`
+- `docs/architecture/swagger-openapi.md`
+- `docs/architecture/transaction-installments-endpoint.md`
 
 ### Testes e validação guiada
 
@@ -446,13 +524,29 @@ Esse arquivo organiza a ordem da apresentação com:
 
 ---
 
-## 17. Observação final
+## 17. Checklist final de entrega
+
+Antes de enviar, consulte obrigatoriamente:
+
+- `docs/checklist.md`
+
+Esse arquivo consolida:
+
+- obrigatórios do edital;
+- diferenciais implementados;
+- evidências;
+- status objetivo;
+- riscos residuais.
+
+---
+
+## 18. Observação final
 
 Este README foi escrito para permitir que alguém avalie a solução sem depender de explicação oral.
 
-A ordem correta de uso do material é:
+Se algo precisar ser defendido na entrega, a ordem correta é:
 
-1. `README.md` para subir e operar;
-2. `docs/architecture` para sustentar decisões técnicas;
-3. `docs/checklist.md` para validar aderência final;
-4. `docs/demo.md` para conduzir a demonstração.
+1. usar o `README.md` para subir e operar;
+2. usar `docs/architecture` para sustentar decisões técnicas;
+3. usar `docs/checklist.md` para validar aderência final ao edital;
+4. usar `docs/demo.md` para conduzir a demonstração.
