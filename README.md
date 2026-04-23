@@ -43,6 +43,30 @@ O roteiro da demonstração está em:
 
 - `docs/demo.md`
 
+## Consultas e validação no banco de dados
+
+A API cobre a consulta operacional principal da solução, mas o banco armazena muito mais informação de execução, rastreabilidade e suporte à auditoria do que aquilo que aparece nos endpoints HTTP.
+
+Para inspecionar esse nível mais profundo, consulte:
+
+- `docs/database-query-guide.md`
+
+Esse guia reúne consultas prontas para validar, no SQL Server:
+
+- execuções de sincronização (`sync_runs`, `sync_run_sources`, `sync_run_pages`);
+- itens recebidos e payload bruto sanitizado (`sync_items`, `psp_raw_payloads`);
+- consolidação do estado atual (`transactions`, `installments`, `payers`, `transaction_payer_snapshots`);
+- idempotência, checkpoints e outbox (`idempotency_registry`, `sync_checkpoints`, `outbox_messages`);
+- rejeições, conflitos e erros (`validation_failures`, `rejected_records`, `data_conflicts`, `reconciliation_cases`, `integration_errors`, `processing_errors`);
+- histórico e evidências de integração (`transaction_events`, `transaction_status_history`, `installment_status_history`, `transaction_integration_evidences`).
+
+Esse material é útil principalmente para:
+
+- demonstrar persistência real além da API;
+- investigar falhas, rejeições e conflitos;
+- comprovar rastreabilidade e idempotência;
+- conduzir consultas de apoio durante a demonstração técnica.
+
 ---
 
 ## 2. Stack principal
@@ -158,6 +182,8 @@ Esse comando sobe:
 - `db-bootstrap` — criação inicial do banco
 - `mock-server` — mock local dos PSPs
 - `app` — API principal
+
+Aguardar até subir todos os ambientes, isto pode levar alguns segundos.
 
 Esse comando sobe o ambiente mesmo sem arquivo `.env`, porque o `docker-compose.yml` usa defaults seguros de demo.
 
